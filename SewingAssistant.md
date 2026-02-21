@@ -39,7 +39,7 @@ An agentic LLM-powered assistant that helps users research, plan, and execute se
 
 ## Recommended Tech Stack
 
-- **Backend:** Python (FastAPI) + LangChain/LangGraph for agentic flow
+- **Backend:** Python (FastAPI) + LangChain/LangGraph for agentic + ScrapeGraphAI
 - **Frontend:** React or Streamlit (faster for 50h)
 - **Database:** SQLite or PostgreSQL
 - **LLM:** OpenAI API or local Ollama
