@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from scrapers.simplicity_scraper import search_patterns, scrape_pattern_detail, _parse_description
+from scrapers.patterns.simplicity_scraper import search_patterns, scrape_pattern_detail, _parse_description
 
 DESCRIPTION_WITH_FABRICS_AND_NOTIONS = (
     "Flared cape has purchased ribbon ties. A: Hood and contrast lining. "
@@ -96,7 +96,7 @@ def test_parse_description_no_fabrics_section():
 # --- search_patterns ---
 
 def test_search_patterns_returns_results():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
         results = search_patterns("summer dress")
     assert len(results) == 1
     assert results[0].pattern_number == "S9898"
@@ -104,25 +104,25 @@ def test_search_patterns_returns_results():
 
 
 def test_search_patterns_extracts_price():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
         results = search_patterns("summer dress")
     assert results[0].price == "$14.67"
 
 
 def test_search_patterns_extracts_image():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
         results = search_patterns("summer dress")
     assert results[0].image_url == "https://cdn.example.com/s9898.jpg"
 
 
 def test_search_patterns_detects_simplicity_brand():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
         results = search_patterns("summer dress")
     assert results[0].brand == "Simplicity"
 
 
 def test_search_patterns_empty_page():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response("<html></html>")):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response("<html></html>")):
         results = search_patterns("xyznothing")
     assert results == []
 
@@ -130,42 +130,42 @@ def test_search_patterns_empty_page():
 # --- scrape_pattern_detail ---
 
 def test_scrape_detail_extracts_title():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert detail.title == "McCall's Cape Costume"
 
 
 def test_scrape_detail_extracts_sku():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert detail.pattern_number == "M4139"
 
 
 def test_scrape_detail_extracts_price():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert detail.price == "10.47"
 
 
 def test_scrape_detail_extracts_brand():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert detail.brand == "McCall's"
 
 
 def test_scrape_detail_extracts_fabrics():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert "Lightweight Satin" in detail.fabric_recommendations
 
 
 def test_scrape_detail_extracts_sizes():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert "S-M-L-XL" in detail.sizes
 
 
 def test_scrape_detail_no_json_ld_returns_unknown():
-    with patch("scrapers.simplicity_scraper.httpx.get", return_value=_mock_response("<html></html>")):
+    with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response("<html></html>")):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert detail.title == "Unknown"
