@@ -1,0 +1,10 @@
+#using llm to make a pattern from a single image
+https://sewformer.github.io/
+
+#using llm to create patterns
+https://www.style3d.com/
+https://www.style3d.com/blog/which-ai-tool-for-sewing-patterns-is-recommended/
+
+#free pattern making with custom measurements
+https://freesewing.dev/reference/api/
+
