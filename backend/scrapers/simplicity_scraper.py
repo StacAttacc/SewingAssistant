@@ -68,8 +68,8 @@ def search_patterns(query: str, max_results: int = 10) -> list[PatternSearchResu
 def scrape_pattern_detail(url: str) -> PatternDetail:
     """
     Scrape a Simplicity pattern detail page.
-    Extracts structured data from JSON-LD, then uses Groq only to parse
-    the description string into fabrics and notions.
+    Extracts structured data from JSON-LD. Fabrics and notions are parsed
+    from the description using regex — no LLM needed.
     """
     resp = httpx.get(url, headers=HEADERS, timeout=15)
     resp.raise_for_status()
