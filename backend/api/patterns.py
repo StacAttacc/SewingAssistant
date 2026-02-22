@@ -1,24 +1,42 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from scrapers.simplicity_scraper import search_patterns, scrape_pattern_detail
+from scrapers.patterns import simplicity_scraper, mood_scraper
 from models.pattern import PatternSearchResult, PatternDetail
 
 router = APIRouter()
 
+SCRAPERS = {
+    "simplicity": simplicity_scraper,
+    "mood": mood_scraper,
+}
+
+DETAIL_HOSTS = {
+    "simplicity.com": simplicity_scraper,
+    "blog.moodfabrics.com": mood_scraper,
+}
+
 
 class PatternSearchRequest(BaseModel):
     query: str
+    source: str = "simplicity"  # "simplicity" | "mood"
 
 
 @router.post("/search", response_model=list[PatternSearchResult])
 def pattern_search(req: PatternSearchRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
-    return search_patterns(req.query)
+    scraper = SCRAPERS.get(req.source)
+    if not scraper:
+        raise HTTPException(status_code=400, detail=f"Unknown source '{req.source}'. Valid: {list(SCRAPERS)}")
+    return scraper.search_patterns(req.query)
 
 
 @router.get("/detail", response_model=PatternDetail)
 def pattern_detail(url: str):
-    if not url.startswith("https://simplicity.com"):
-        raise HTTPException(status_code=400, detail="Only simplicity.com URLs are supported")
-    return scrape_pattern_detail(url)
+    for host, scraper in DETAIL_HOSTS.items():
+        if host in url:
+            return scraper.scrape_pattern_detail(url)
+    raise HTTPException(
+        status_code=400,
+        detail=f"Unsupported URL. Supported hosts: {list(DETAIL_HOSTS)}",
+    )
