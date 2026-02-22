@@ -19,6 +19,7 @@ def search_patterns(query: str, max_results: int = 10) -> list[PatternSearchResu
             if not url or not title:
                 continue
             results.append(PatternSearchResult(
+                source="laughing_moon",
                 title=title,
                 brand="Laughing Moon Mercantile",
                 url=url,

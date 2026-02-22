@@ -27,6 +27,7 @@ def test_search_returns_results():
     with patch("scrapers.patterns.laughing_moon_scraper.DDGS", return_value=_mock_ddgs(MOCK_DDG_RESULTS)):
         results = search_patterns("victorian bodice")
     assert len(results) == 2
+    assert results[0].source == "laughing_moon"
 
 
 def test_search_extracts_title():

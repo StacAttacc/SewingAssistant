@@ -78,6 +78,7 @@ def test_search_returns_results():
     with patch("scrapers.patterns.truly_victorian_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
         results = search_patterns("bustle skirt")
     assert len(results) == 2
+    assert results[0].source == "truly_victorian"
 
 
 def test_search_extracts_title():
@@ -116,6 +117,7 @@ def test_detail_extracts_title():
     with patch("scrapers.patterns.truly_victorian_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://trulyvictorian.info/shop/tv100/")
     assert detail.title == "TV100 1880s Bustle Skirt"
+    assert detail.source == "truly_victorian"
 
 
 def test_detail_extracts_sku():

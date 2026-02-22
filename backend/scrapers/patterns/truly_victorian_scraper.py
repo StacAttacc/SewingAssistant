@@ -50,6 +50,7 @@ def scrape_pattern_detail(url: str) -> PatternDetail:
     fabrics = _extract_fabrics(desc_el) if desc_el else []
 
     return PatternDetail(
+        source="truly_victorian",
         title=title,
         pattern_number=sku,
         brand="Truly Victorian",
@@ -75,6 +76,7 @@ def _parse_product_list(soup: BeautifulSoup, max_results: int) -> list[PatternSe
             continue
 
         results.append(PatternSearchResult(
+            source="truly_victorian",
             title=title_el.get_text(strip=True),
             brand="Truly Victorian",
             price=price_el.get_text(strip=True) if price_el else None,

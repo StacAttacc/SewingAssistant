@@ -70,6 +70,7 @@ def test_search_returns_results():
     with patch("scrapers.patterns.mood_scraper.httpx.get", return_value=_mock_response(MOCK_SEARCH_HTML)):
         results = search_patterns("pencil skirt")
     assert len(results) == 2
+    assert results[0].source == "mood"
 
 
 def test_search_extracts_title():
@@ -108,6 +109,7 @@ def test_detail_extracts_title():
     with patch("scrapers.patterns.mood_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://blog.moodfabrics.com/peak-pencil-skirt-free-sewing-pattern/")
     assert detail.title == "The Peak Pencil Skirt Free Sewing Pattern"
+    assert detail.source == "mood"
 
 
 def test_detail_extracts_image():

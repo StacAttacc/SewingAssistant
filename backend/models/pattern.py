@@ -2,7 +2,8 @@ from pydantic import BaseModel
 
 
 class PatternSearchResult(BaseModel):
-    """Returned from search (Simplicity site or DuckDuckGo fallback)."""
+    """Returned from search across any pattern source."""
+    source: str
     title: str
     pattern_number: str | None = None
     brand: str | None = None
@@ -14,6 +15,7 @@ class PatternSearchResult(BaseModel):
 
 class PatternDetail(BaseModel):
     """Returned from scraping a specific pattern page."""
+    source: str
     title: str
     pattern_number: str | None = None
     brand: str | None = None

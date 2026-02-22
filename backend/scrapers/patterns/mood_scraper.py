@@ -31,6 +31,7 @@ def search_patterns(query: str, max_results: int = 10) -> list[PatternSearchResu
             continue
 
         results.append(PatternSearchResult(
+            source="mood",
             title=title_el.get_text(strip=True),
             brand="Mood Fabrics",
             image_url=img_el.get("src") if img_el else None,
@@ -57,6 +58,7 @@ def scrape_pattern_detail(url: str) -> PatternDetail:
     if not ld_json:
         title_el = soup.select_one("h1")
         return PatternDetail(
+            source="mood",
             title=title_el.get_text(strip=True) if title_el else "Unknown",
             brand="Mood Fabrics",
             url=url,
@@ -70,6 +72,7 @@ def scrape_pattern_detail(url: str) -> PatternDetail:
     fabrics = _extract_materials(content_el) if content_el else []
 
     return PatternDetail(
+        source="mood",
         title=title,
         brand="Mood Fabrics",
         image_url=image_url,

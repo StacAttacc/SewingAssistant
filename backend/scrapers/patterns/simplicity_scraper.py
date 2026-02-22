@@ -54,6 +54,7 @@ def search_patterns(query: str, max_results: int = 10) -> list[PatternSearchResu
 
         url = title_el.get("href", "")
         results.append(PatternSearchResult(
+            source="simplicity",
             title=title_el.get_text(strip=True),
             pattern_number=sku_el.get_text(strip=True) if sku_el else None,
             brand=_extract_brand(url),
@@ -88,7 +89,7 @@ def scrape_pattern_detail(url: str) -> PatternDetail:
             continue
 
     if not ld_json:
-        return PatternDetail(title="Unknown", url=url)
+        return PatternDetail(source="simplicity", title="Unknown", url=url)
 
     description = ld_json.get("description", "")
     price = str(ld_json.get("offers", {}).get("price", "")) or None
@@ -106,6 +107,7 @@ def scrape_pattern_detail(url: str) -> PatternDetail:
     fabrics, notions = _parse_description(description)
 
     return PatternDetail(
+        source="simplicity",
         title=title,
         pattern_number=sku,
         brand=brand,

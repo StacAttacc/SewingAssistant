@@ -101,6 +101,7 @@ def test_search_patterns_returns_results():
     assert len(results) == 1
     assert results[0].pattern_number == "S9898"
     assert results[0].title == "Simplicity Easy Summer Dress"
+    assert results[0].source == "simplicity"
 
 
 def test_search_patterns_extracts_price():
@@ -133,6 +134,7 @@ def test_scrape_detail_extracts_title():
     with patch("scrapers.patterns.simplicity_scraper.httpx.get", return_value=_mock_response(MOCK_DETAIL_HTML)):
         detail = scrape_pattern_detail("https://simplicity.com/mccalls/m4139")
     assert detail.title == "McCall's Cape Costume"
+    assert detail.source == "simplicity"
 
 
 def test_scrape_detail_extracts_sku():

@@ -68,6 +68,7 @@ def test_search_matches_by_title():
         results = search_patterns("dress")
     assert len(results) == 1
     assert "Visiting Dress" in results[0].title
+    assert results[0].source == "black_snail"
 
 
 def test_search_matches_by_tag():
@@ -116,6 +117,7 @@ def test_detail_extracts_title():
     with patch("scrapers.patterns.black_snail_scraper.httpx.get", return_value=_mock_response(MOCK_PRODUCT_JSON)):
         detail = scrape_pattern_detail("https://blacksnailpatterns.com/products/tv101-visiting-dress")
     assert detail.title == "TV101 Visiting Dress 1872"
+    assert detail.source == "black_snail"
 
 
 def test_detail_extracts_price():

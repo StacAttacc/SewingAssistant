@@ -78,21 +78,18 @@ def scrape_pattern_detail(url: str) -> PatternDetail:
 
     product = resp.json().get("product")
     if not product:
-        return PatternDetail(title="Unknown", brand="Black Snail Patterns", url=url)
+        return PatternDetail(source="black_snail", title="Unknown", brand="Black Snail Patterns", url=url)
 
     title = product.get("title", "Unknown")
     price = product.get("variants", [{}])[0].get("price")
     image_url = (product.get("images") or [{}])[0].get("src")
-    tags = product.get("tags", [])
-    product_type = product.get("product_type", "")
 
     return PatternDetail(
+        source="black_snail",
         title=title,
         brand="Black Snail Patterns",
         price=price,
         image_url=image_url,
-        fabric_recommendations=[],  # Not structured in Shopify data
-        notions=[],
         url=url,
     )
 
@@ -102,6 +99,7 @@ def _product_to_search_result(product: dict) -> PatternSearchResult:
     price = product.get("variants", [{}])[0].get("price")
     image_url = (product.get("images") or [{}])[0].get("src")
     return PatternSearchResult(
+        source="black_snail",
         title=product.get("title", ""),
         brand="Black Snail Patterns",
         price=price,
