@@ -16,11 +16,10 @@ def search(base_url: str, source: str, query: str, max_results: int = 10) -> lis
     soup = BeautifulSoup(resp.text, "html.parser")
     results = []
 
-    for card in soup.select("article.product-miniature")[:max_results]:
-        title_el = card.select_one("h3.product-title a, h2.product-title a")
+    for card in soup.select(".product-miniature")[:max_results]:
+        title_el = card.select_one(".product-title a, .product-name a")
         price_el = card.select_one("span.price")
-        img_el = card.select_one("a.product-thumbnail img")
-        link_el = card.select_one("a.product-thumbnail")
+        img_el = card.select_one("img")
 
         if not title_el:
             continue
@@ -28,7 +27,7 @@ def search(base_url: str, source: str, query: str, max_results: int = 10) -> lis
         title = title_el.get_text(strip=True)
         price = price_el.get_text(strip=True) if price_el else None
         image_url = img_el.get("src") or img_el.get("data-src") if img_el else None
-        href = link_el.get("href") if link_el else None
+        href = title_el.get("href")
         product_url = href if href and href.startswith("http") else f"{base_url}{href}" if href else ""
 
         results.append(FabricSearchResult(
