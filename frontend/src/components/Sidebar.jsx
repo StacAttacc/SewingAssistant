@@ -27,7 +27,7 @@ export default function Sidebar({ open }) {
             `btn btn-ghost justify-start gap-3 px-2 ${isActive ? 'btn-active' : ''}`
           }
         >
-          <Icon size={20} className="shrink-0" />
+          <Icon name='Icon' size={20} className="shrink-0" />
           {open && <span>{label}</span>}
         </NavLink>
       ))}
