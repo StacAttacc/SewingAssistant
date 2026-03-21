@@ -1,10 +1,14 @@
 from fastapi import APIRouter, HTTPException
 from services import project_service
 from models.project import (
-    ProjectCreate, Project,
-    ChecklistItemCreate, ChecklistItem,
-    ProjectPatternSave, ProjectPattern,
-    ProjectMaterialCreate, ProjectMaterial,
+    ProjectCreate,
+    Project,
+    ChecklistItemCreate,
+    ChecklistItem,
+    ProjectPatternSave,
+    ProjectPattern,
+    ProjectMaterialCreate,
+    ProjectMaterial,
     ProjectDetail,
 )
 
@@ -12,6 +16,7 @@ router = APIRouter()
 
 
 # --- Projects ---
+
 
 @router.get("/", response_model=list[Project])
 def list_projects():
@@ -23,11 +28,13 @@ def get_project(project_id: int):
     project = project_service.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    return ProjectDetail(
-        **project,
-        patterns=project_service.get_saved_patterns(project_id),
-        materials=project_service.get_materials(project_id),
-        checklist=project_service.get_checklist(project_id),
+    return ProjectDetail.model_validate(
+        {
+            **project,
+            "patterns": project_service.get_saved_patterns(project_id),
+            "materials": project_service.get_materials(project_id),
+            "checklist": project_service.get_checklist(project_id),
+        }
     )
 
 
@@ -43,6 +50,7 @@ def delete_project(project_id: int):
 
 
 # --- Checklist ---
+
 
 @router.get("/{project_id}/checklist", response_model=list[ChecklistItem])
 def get_checklist(project_id: int):
@@ -70,6 +78,7 @@ def delete_checklist_item(project_id: int, item_id: int):
 
 # --- Saved patterns ---
 
+
 @router.get("/{project_id}/patterns", response_model=list[ProjectPattern])
 def get_saved_patterns(project_id: int):
     return project_service.get_saved_patterns(project_id)
@@ -90,6 +99,7 @@ def delete_saved_pattern(project_id: int, pattern_id: int):
 
 # --- Project materials ---
 
+
 @router.get("/{project_id}/materials", response_model=list[ProjectMaterial])
 def get_materials(project_id: int):
     return project_service.get_materials(project_id)
@@ -97,10 +107,14 @@ def get_materials(project_id: int):
 
 @router.post("/{project_id}/materials", response_model=dict)
 def add_material(project_id: int, data: ProjectMaterialCreate):
-    return project_service.add_material(project_id, data.name, data.quantity, data.notes)
+    return project_service.add_material(
+        project_id, data.name, data.quantity, data.notes
+    )
 
 
-@router.patch("/{project_id}/materials/{material_id}/toggle", response_model=ProjectMaterial)
+@router.patch(
+    "/{project_id}/materials/{material_id}/toggle", response_model=ProjectMaterial
+)
 def toggle_material_purchased(project_id: int, material_id: int):
     material = project_service.toggle_material_purchased(material_id, project_id)
     if not material:
