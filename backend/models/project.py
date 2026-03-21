@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 # --- Request models (what the client sends) ---
 
+
 class ProjectCreate(BaseModel):
     name: str
     description: str = ""
@@ -16,6 +17,7 @@ class ChecklistItemCreate(BaseModel):
 
 class ProjectPatternSave(BaseModel):
     """Save a pattern (from any scraper) to a project."""
+
     source: str = ""
     title: str = ""
     url: str
@@ -30,6 +32,7 @@ class ProjectMaterialCreate(BaseModel):
 
 
 # --- Response models (what the API returns) ---
+
 
 class Project(BaseModel):
     id: int
@@ -71,6 +74,7 @@ class ProjectMaterial(BaseModel):
 
 class ProjectDetail(BaseModel):
     """Full project with all nested data — returned by GET /projects/{id}."""
+
     id: int
     name: str
     description: str
