@@ -2,10 +2,10 @@ import { NavLink } from 'react-router-dom'
 import { House, FolderOpen, FolderPlus, Archive } from 'lucide-react'
 
 const links = [
-  { to: '/',                label: 'Home',            Icon: House       },
-  { to: '/project/current', label: 'Current Project', Icon: FolderOpen  },
-  { to: '/project/new',     label: 'New Project',     Icon: FolderPlus  },
-  { to: '/projects',        label: 'Past Projects',   Icon: Archive     },
+  { to: '/', label: 'Home', Icon: House },
+  { to: '/project/current', label: 'Current Project', Icon: FolderOpen },
+  { to: '/project/new', label: 'New Project', Icon: FolderPlus },
+  { to: '/projects', label: 'Past Projects', Icon: Archive },
 ]
 
 export default function Sidebar({ open }) {
@@ -14,7 +14,7 @@ export default function Sidebar({ open }) {
       className={`
         flex flex-col gap-1 py-4 bg-base-200 min-h-screen shrink-0
         transition-all duration-200
-        ${open ? 'w-56 px-4' : 'w-14 px-2'}
+        ${open ? 'w-56 px-4' : 'w-15 px-2'}
       `}
     >
       {links.map(({ to, label, Icon }) => (
