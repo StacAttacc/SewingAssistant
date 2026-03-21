@@ -59,9 +59,6 @@ export default function ProjectDetail() {
       <div>
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-semibold">{project.name}</h1>
-          {project.status && (
-            <span className="badge">{project.status}</span>
-          )}
         </div>
         {project.description && (
           <p className="text-base-content/70">{project.description}</p>

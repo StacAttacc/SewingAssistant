@@ -36,7 +36,6 @@ class Project(BaseModel):
     name: str
     description: str
     budget: float | None
-    status: str
     created_at: str
 
 
@@ -76,7 +75,6 @@ class ProjectDetail(BaseModel):
     name: str
     description: str
     budget: float | None
-    status: str
     created_at: str
     patterns: list[ProjectPattern]
     materials: list[ProjectMaterial]

@@ -1,22 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 
-function statusBadgeClass(status) {
-  switch (status?.toLowerCase()) {
-    case 'active': return 'badge-success'
-    case 'completed': return 'badge-info'
-    case 'on hold': return 'badge-warning'
-    case 'cancelled': return 'badge-error'
-    default: return 'badge-neutral'
-  }
-}
-
 export default function Projects() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('All')
 
   // New project modal form state
   const [modalName, setModalName] = useState('')
@@ -41,16 +30,13 @@ export default function Projects() {
 
   useEffect(() => { fetchProjects() }, [])
 
-  const statuses = ['All', ...new Set(projects.map(p => p.status).filter(Boolean))]
-
   const filtered = projects.filter(p => {
     const q = search.toLowerCase()
-    const matchesSearch =
+    return (
       p.name?.toLowerCase().includes(q) ||
       p.description?.toLowerCase().includes(q) ||
       String(p.budget ?? '').includes(q)
-    const matchesStatus = statusFilter === 'All' || p.status === statusFilter
-    return matchesSearch && matchesStatus
+    )
   })
 
   async function handleCreate(e) {
@@ -94,22 +80,15 @@ export default function Projects() {
         </button>
       </div>
 
-      {/* Search and filter */}
-      <div className="flex gap-3 mb-6">
+      {/* Search */}
+      <div className="mb-6">
         <input
           type="text"
           placeholder="Search projects…"
-          className="input input-bordered flex-1"
+          className="input input-bordered w-full"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <select
-          className="select select-bordered"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
-          {statuses.map(s => <option key={s}>{s}</option>)}
-        </select>
       </div>
 
       {/* List */}
@@ -138,14 +117,7 @@ export default function Projects() {
               className="card bg-base-100 border border-base-300 hover:border-primary hover:shadow-md transition-all"
             >
               <div className="card-body gap-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="card-title text-base line-clamp-2">{p.name}</h2>
-                  {p.status && (
-                    <span className={`badge badge-sm shrink-0 ${statusBadgeClass(p.status)}`}>
-                      {p.status}
-                    </span>
-                  )}
-                </div>
+                <h2 className="card-title text-base line-clamp-2">{p.name}</h2>
                 {p.description && (
                   <p className="text-sm text-base-content/70 line-clamp-2">{p.description}</p>
                 )}

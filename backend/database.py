@@ -19,7 +19,6 @@ def init_db():
                 name        TEXT NOT NULL,
                 description TEXT NOT NULL DEFAULT '',
                 budget      REAL,
-                status      TEXT NOT NULL DEFAULT 'active',
                 created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
