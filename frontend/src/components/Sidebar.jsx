@@ -1,11 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { House, FolderOpen, FolderPlus, Archive } from 'lucide-react'
+import { House, FolderOpen } from 'lucide-react'
 
 const links = [
   { to: '/', label: 'Home', Icon: House },
-  { to: '/project/current', label: 'Current Project', Icon: FolderOpen },
-  { to: '/project/new', label: 'New Project', Icon: FolderPlus },
-  { to: '/projects', label: 'Past Projects', Icon: Archive },
+  { to: '/projects', label: 'Projects', Icon: FolderOpen },
 ]
 
 export default function Sidebar({ open }) {
@@ -27,7 +25,7 @@ export default function Sidebar({ open }) {
             `btn btn-ghost justify-start gap-3 px-2 ${isActive ? 'btn-active' : ''}`
           }
         >
-          <Icon name='Icon' size={20} className="shrink-0" />
+          <Icon size={20} className="shrink-0" />
           {open && <span>{label}</span>}
         </NavLink>
       ))}

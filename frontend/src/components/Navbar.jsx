@@ -1,15 +1,15 @@
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { useBreadcrumb } from '../contexts/BreadcrumbContext'
 
 const crumbMap = {
   '/': 'Home',
-  '/project/current': 'Current Project',
-  '/project/new': 'New Project',
-  '/projects': 'Past Projects',
+  '/projects': 'Projects',
 }
 
 export default function Navbar({ onToggleSidebar }) {
   const { pathname } = useLocation()
-  const crumb = crumbMap[pathname] ?? 'Sewing Assistant'
+  const { crumb } = useBreadcrumb()
+  const isProjectDetail = pathname.startsWith('/projects/')
 
   return (
     <nav className="navbar bg-base-100 border-b border-base-300 px-4 gap-4">
@@ -26,7 +26,14 @@ export default function Navbar({ onToggleSidebar }) {
       <div className="breadcrumbs text-sm">
         <ul>
           <li><span className="text-base-content/50">Sewing Assistant</span></li>
-          <li className="font-medium">{crumb}</li>
+          {isProjectDetail ? (
+            <>
+              <li><Link to="/projects" className="font-medium">Projects</Link></li>
+              {crumb && <li className="font-medium">{crumb}</li>}
+            </>
+          ) : (
+            <li className="font-medium">{crumbMap[pathname] ?? 'Sewing Assistant'}</li>
+          )}
         </ul>
       </div>
     </nav>
