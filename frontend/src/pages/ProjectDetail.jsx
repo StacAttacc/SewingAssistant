@@ -154,6 +154,108 @@ function PatternCard({ pattern, projectId, onDelete }) {
   )
 }
 
+function ChecklistSection({ projectId, initialItems }) {
+  const [items, setItems] = useState(initialItems)
+  const [newTitle, setNewTitle] = useState('')
+  const [adding, setAdding] = useState(false)
+
+  async function handleToggle(itemId) {
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/projects/${projectId}/checklist/${itemId}/toggle`,
+        { method: 'PATCH' }
+      )
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      const updated = await res.json()
+      setItems(prev => prev.map(i => i.id === itemId ? updated : i))
+    } catch (err) {
+      console.error('Toggle failed:', err)
+    }
+  }
+
+  async function handleDelete(itemId) {
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/projects/${projectId}/checklist/${itemId}`,
+        { method: 'DELETE' }
+      )
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      setItems(prev => prev.filter(i => i.id !== itemId))
+    } catch (err) {
+      console.error('Delete failed:', err)
+    }
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault()
+    if (!newTitle.trim()) return
+    setAdding(true)
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/projects/${projectId}/checklist`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle.trim(), notes: '' }),
+        }
+      )
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      // Refetch to get the full item with id/timestamps
+      const listRes = await fetch(`http://localhost:8000/api/projects/${projectId}/checklist`)
+      if (listRes.ok) setItems(await listRes.json())
+      setNewTitle('')
+    } catch (err) {
+      console.error('Add failed:', err)
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  return (
+    <section>
+      <h2 className="text-lg font-medium mb-3">Checklist</h2>
+      {items.length > 0 ? (
+        <ul className="space-y-2 mb-4">
+          {items.map(item => (
+            <li key={item.id} className="flex items-center gap-3 group">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-sm"
+                checked={!!item.checked}
+                onChange={() => handleToggle(item.id)}
+              />
+              <span className={`flex-1 ${item.checked ? 'line-through text-base-content/40' : ''}`}>
+                {item.title}
+              </span>
+              <button
+                className="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 text-error"
+                onClick={() => handleDelete(item.id)}
+                title="Delete"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-base-content/40 text-sm mb-4">No checklist items yet.</p>
+      )}
+      <form onSubmit={handleAdd} className="flex gap-2">
+        <input
+          type="text"
+          className="input input-bordered input-sm flex-1"
+          placeholder="Add item…"
+          value={newTitle}
+          onChange={e => setNewTitle(e.target.value)}
+        />
+        <button type="submit" className="btn btn-sm btn-primary" disabled={adding || !newTitle.trim()}>
+          {adding ? <span className="loading loading-spinner loading-xs" /> : 'Add'}
+        </button>
+      </form>
+    </section>
+  )
+}
+
 export default function ProjectDetail() {
   const { id } = useParams()
   const { setCrumb } = useBreadcrumb()
@@ -289,28 +391,7 @@ export default function ProjectDetail() {
         </section>
 
         {/* Checklist */}
-        <section>
-          <h2 className="text-lg font-medium mb-3">Checklist</h2>
-          {project.checklist?.length > 0 ? (
-            <ul className="space-y-2">
-              {project.checklist.map(item => (
-                <li key={item.id} className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-sm"
-                    defaultChecked={item.checked}
-                    readOnly
-                  />
-                  <span className={item.checked ? 'line-through text-base-content/40' : ''}>
-                    {item.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-base-content/40 text-sm">No checklist items yet.</p>
-          )}
-        </section>
+        <ChecklistSection projectId={id} initialItems={project.checklist ?? []} />
       </div>
     </>
   )
