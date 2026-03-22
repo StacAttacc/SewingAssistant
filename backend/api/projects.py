@@ -1,5 +1,9 @@
-from fastapi import APIRouter, HTTPException
+import os
+import uuid
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from services import project_service
+
+UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
 from models.project import (
     ProjectCreate,
     Project,
@@ -95,6 +99,34 @@ def save_pattern(project_id: int, data: ProjectPatternSave):
 def delete_saved_pattern(project_id: int, pattern_id: int):
     project_service.delete_saved_pattern(pattern_id, project_id)
     return {"deleted": pattern_id}
+
+
+@router.post("/{project_id}/patterns/upload", response_model=dict)
+async def upload_pattern(
+    project_id: int,
+    file: UploadFile = File(...),
+    title: str = Form(""),
+):
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    allowed = {".pdf", ".jpg", ".jpeg", ".png", ".webp"}
+    if ext not in allowed:
+        raise HTTPException(
+            status_code=400, detail=f"File type not allowed. Allowed: {allowed}"
+        )
+    filename = f"{uuid.uuid4()}{ext}"
+    dest = os.path.join(UPLOADS_DIR, filename)
+    content = await file.read()
+    with open(dest, "wb") as f:
+        f.write(content)
+    url = f"/uploads/{filename}"
+    return project_service.save_pattern(
+        project_id,
+        source="upload",
+        title=title or file.filename or "",
+        url=url,
+        image_url=url if ext in {".jpg", ".jpeg", ".png", ".webp"} else None,
+        price=None,
+    )
 
 
 # --- Project materials ---

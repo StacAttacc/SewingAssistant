@@ -9,7 +9,10 @@ const crumbMap = {
 export default function Navbar({ onToggleSidebar }) {
   const { pathname } = useLocation()
   const { crumb } = useBreadcrumb()
-  const isProjectDetail = pathname.startsWith('/projects/')
+  const projectIdMatch = pathname.match(/\/projects\/(\d+)/)
+  const projectId = projectIdMatch?.[1]
+  const isAddPattern = /\/projects\/\d+\/patterns\/add/.test(pathname)
+  const isProjectDetail = pathname.startsWith('/projects/') && !isAddPattern
 
   return (
     <nav className="navbar bg-base-100 border-b border-base-300 px-4 gap-4">
@@ -26,7 +29,13 @@ export default function Navbar({ onToggleSidebar }) {
       <div className="breadcrumbs text-sm">
         <ul>
           <li><span className="text-base-content/50">Sewing Assistant</span></li>
-          {isProjectDetail ? (
+          {isAddPattern ? (
+            <>
+              <li><Link to="/projects">Projects</Link></li>
+              {crumb && <li><Link to={`/projects/${projectId}`}>{crumb}</Link></li>}
+              <li className="font-medium">Add Pattern</li>
+            </>
+          ) : isProjectDetail ? (
             <>
               <li><Link to="/projects" className="font-medium">Projects</Link></li>
               {crumb && <li className="font-medium">{crumb}</li>}
