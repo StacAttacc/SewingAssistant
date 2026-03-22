@@ -260,7 +260,12 @@ export default function ProjectDetail() {
 
         {/* Materials */}
         <section>
-          <h2 className="text-lg font-medium mb-3">Materials</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-medium">Materials</h2>
+            <Link to={`/projects/${id}/materials/add`} className="btn btn-primary btn-sm">
+              + Add Material
+            </Link>
+          </div>
           {project.materials?.length > 0 ? (
             <div className="grid gap-3">
               {project.materials.map(m => (
