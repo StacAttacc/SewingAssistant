@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 export default function Projects() {
+  const navigate = useNavigate()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -57,13 +58,8 @@ export default function Projects() {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.detail || `Error ${res.status}`)
       }
-      dialogRef.current?.close()
-      setModalName('')
-      setModalDesc('')
-      setModalBudget('')
-      setLoading(true)
-      setError(null)
-      await fetchProjects()
+      const created = await res.json()
+      navigate(`/projects/${created.id}`)
     } catch (err) {
       setModalError(err.message)
     } finally {
