@@ -214,99 +214,99 @@ export default function ProjectDetail() {
 
   return (
     <>
-    {previewPattern && (
-      <PreviewModal pattern={previewPattern} onClose={() => setPreviewPattern(null)} />
-    )}
-    <div className="max-w-3xl mx-auto space-y-8">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-2xl font-semibold">{project.name}</h1>
-        </div>
-        {project.description && (
-          <p className="text-base-content/70">{project.description}</p>
-        )}
-        <div className="flex gap-4 mt-3 text-sm text-base-content/50">
-          {project.budget != null && <span>Budget: ${Number(project.budget).toFixed(2)}</span>}
-          {project.created_at && (
-            <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>
+      {previewPattern && (
+        <PreviewModal pattern={previewPattern} onClose={() => setPreviewPattern(null)} />
+      )}
+      <div className="max-w-3xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-2xl font-semibold">{project.name}</h1>
+          </div>
+          {project.description && (
+            <p className="text-base-content/70">{project.description}</p>
           )}
-        </div>
-      </div>
-
-      {/* Patterns */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-medium">Patterns</h2>
-          <Link to={`/projects/${id}/patterns/add`} className="btn btn-primary btn-sm">
-            + Add Pattern
-          </Link>
-        </div>
-        {project.patterns?.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {project.patterns.map(p => (
-              <PatternCard
-                key={p.id}
-                pattern={p}
-                projectId={id}
-                onDelete={patternHandlers}
-              />
-            ))}
+          <div className="flex gap-4 mt-3 text-sm text-base-content/50">
+            {project.budget != null && <span>Budget: ${Number(project.budget).toFixed(2)}</span>}
+            {project.created_at && (
+              <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>
+            )}
           </div>
-        ) : (
-          <p className="text-base-content/40 text-sm">No patterns added yet.</p>
-        )}
-      </section>
+        </div>
 
-      {/* Materials */}
-      <section>
-        <h2 className="text-lg font-medium mb-3">Materials</h2>
-        {project.materials?.length > 0 ? (
-          <div className="grid gap-3">
-            {project.materials.map(m => (
-              <div key={m.id} className="card bg-base-100 border border-base-300">
-                <div className="card-body py-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{m.name}</p>
-                    {m.purchased && <span className="badge badge-success badge-sm">Purchased</span>}
-                  </div>
-                  {m.quantity && (
-                    <p className="text-sm text-base-content/60">{m.quantity} {m.unit}</p>
-                  )}
-                  {m.notes && <p className="text-sm">{m.notes}</p>}
-                </div>
-              </div>
-            ))}
+        {/* Patterns */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-medium">Patterns</h2>
+            <Link to={`/projects/${id}/patterns/add`} className="btn btn-primary btn-sm">
+              + Add Pattern
+            </Link>
           </div>
-        ) : (
-          <p className="text-base-content/40 text-sm">No materials added yet.</p>
-        )}
-      </section>
-
-      {/* Checklist */}
-      <section>
-        <h2 className="text-lg font-medium mb-3">Checklist</h2>
-        {project.checklist?.length > 0 ? (
-          <ul className="space-y-2">
-            {project.checklist.map(item => (
-              <li key={item.id} className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-sm"
-                  defaultChecked={item.checked}
-                  readOnly
+          {project.patterns?.length > 0 ? (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {project.patterns.map(p => (
+                <PatternCard
+                  key={p.id}
+                  pattern={p}
+                  projectId={id}
+                  onDelete={patternHandlers}
                 />
-                <span className={item.checked ? 'line-through text-base-content/40' : ''}>
-                  {item.text}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-base-content/40 text-sm">No checklist items yet.</p>
-        )}
-      </section>
-    </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-base-content/40 text-sm">No patterns added yet.</p>
+          )}
+        </section>
+
+        {/* Materials */}
+        <section>
+          <h2 className="text-lg font-medium mb-3">Materials</h2>
+          {project.materials?.length > 0 ? (
+            <div className="grid gap-3">
+              {project.materials.map(m => (
+                <div key={m.id} className="card bg-base-100 border border-base-300">
+                  <div className="card-body py-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">{m.name}</p>
+                      {m.purchased && <span className="badge badge-success badge-sm">Purchased</span>}
+                    </div>
+                    {m.quantity && (
+                      <p className="text-sm text-base-content/60">{m.quantity} {m.unit}</p>
+                    )}
+                    {m.notes && <p className="text-sm">{m.notes}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-base-content/40 text-sm">No materials added yet.</p>
+          )}
+        </section>
+
+        {/* Checklist */}
+        <section>
+          <h2 className="text-lg font-medium mb-3">Checklist</h2>
+          {project.checklist?.length > 0 ? (
+            <ul className="space-y-2">
+              {project.checklist.map(item => (
+                <li key={item.id} className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm"
+                    defaultChecked={item.checked}
+                    readOnly
+                  />
+                  <span className={item.checked ? 'line-through text-base-content/40' : ''}>
+                    {item.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-base-content/40 text-sm">No checklist items yet.</p>
+          )}
+        </section>
+      </div>
     </>
   )
 }
