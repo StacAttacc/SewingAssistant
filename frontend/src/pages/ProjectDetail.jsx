@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react'
-
-const PDF_SCALE = 160 / 816  // card width / standard PDF width
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
+import { Eye, ExternalLink, Trash2, Package } from 'lucide-react'
 
+const PDF_THUMB_SIZE = 48
+const PDF_THUMB_SCALE = PDF_THUMB_SIZE / 816
 
 function PreviewModal({ pattern, onClose }) {
   const iframeRef = useRef(null)
@@ -56,7 +57,7 @@ function PreviewModal({ pattern, onClose }) {
   )
 }
 
-function PatternCard({ pattern, projectId, onDelete }) {
+function PatternRow({ pattern, projectId, onDelete }) {
   const isUpload = pattern.source === 'upload'
   const isPDF = pattern.url?.endsWith('.pdf')
 
@@ -71,15 +72,14 @@ function PatternCard({ pattern, projectId, onDelete }) {
       )
     }
     if (isUpload && isPDF && pattern.url) {
-      const iframeSize = 816
       return (
         <div className="relative w-full h-full overflow-hidden">
           <iframe
             src={`http://localhost:8000${pattern.url}`}
             style={{
-              width: iframeSize,
-              height: iframeSize,
-              transform: `scale(${PDF_SCALE})`,
+              width: 816,
+              height: 816,
+              transform: `scale(${PDF_THUMB_SCALE})`,
               transformOrigin: 'top left',
               pointerEvents: 'none',
               position: 'absolute',
@@ -102,7 +102,7 @@ function PatternCard({ pattern, projectId, onDelete }) {
     }
     return (
       <div className="w-full h-full flex items-center justify-center text-base-content/30">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
         </svg>
@@ -110,7 +110,7 @@ function PatternCard({ pattern, projectId, onDelete }) {
     )
   }
 
-  function handleCardClick() {
+  function handleAction() {
     if (isUpload) {
       onDelete.openPreview(pattern)
     } else {
@@ -118,8 +118,7 @@ function PatternCard({ pattern, projectId, onDelete }) {
     }
   }
 
-  async function handleDelete(e) {
-    e.stopPropagation()
+  async function handleDelete() {
     try {
       const res = await fetch(
         `http://localhost:8000/api/projects/${projectId}/patterns/${pattern.id}`,
@@ -133,23 +132,85 @@ function PatternCard({ pattern, projectId, onDelete }) {
   }
 
   return (
-    <div className="flex-none flex flex-col gap-1" style={{ width: 160 }}>
-      <div
-        className="relative w-40 h-40 rounded-xl overflow-hidden bg-base-200 border border-base-300 cursor-pointer hover:opacity-90 transition-opacity"
-        onClick={handleCardClick}
-      >
+    <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
+      <div className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300">
         {renderThumbnail()}
-        <button
-          className="absolute top-1 right-1 btn btn-xs btn-circle btn-error opacity-80 hover:opacity-100"
-          onClick={handleDelete}
-          title="Delete"
-        >
-          ×
-        </button>
       </div>
-      <p className="text-xs font-medium truncate w-40 text-center">
+      <span className="flex-1 text-sm font-medium truncate min-w-0">
         {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
-      </p>
+      </span>
+      <button
+        className="btn btn-xs btn-ghost"
+        onClick={handleAction}
+        title={isUpload ? 'Preview' : 'Open'}
+      >
+        {isUpload
+          ? <Eye className="w-4 h-4" />
+          : <ExternalLink className="w-4 h-4" />
+        }
+      </button>
+      <button
+        className="btn btn-xs btn-ghost text-error"
+        onClick={handleDelete}
+        title="Delete"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
+
+function MaterialRow({ material, projectId, onDelete }) {
+  const urlMatch = material.notes?.match(/https?:\/\/[^\s]+/)
+  const url = urlMatch?.[0]
+
+  async function handleDelete() {
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/projects/${projectId}/materials/${material.id}`,
+        { method: 'DELETE' }
+      )
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      onDelete(material.id)
+    } catch (err) {
+      console.error('Delete failed:', err)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
+      <div className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300">
+        {material.image_url
+          ? <img src={material.image_url} alt="" className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-base-content/30"><Package className="w-5 h-5" /></div>
+        }
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{material.name}</p>
+        {material.quantity && (
+          <p className="text-xs text-base-content/50 truncate">{material.quantity}{material.unit ? ` ${material.unit}` : ''}</p>
+        )}
+      </div>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-xs btn-ghost"
+          title="Open"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      ) : (
+        <span className="w-7" />
+      )}
+      <button
+        className="btn btn-xs btn-ghost text-error"
+        onClick={handleDelete}
+        title="Delete"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
     </div>
   )
 }
@@ -200,7 +261,6 @@ function ChecklistSection({ projectId, initialItems }) {
         }
       )
       if (!res.ok) throw new Error(`Error ${res.status}`)
-      // Refetch to get the full item with id/timestamps
       const listRes = await fetch(`http://localhost:8000/api/projects/${projectId}/checklist`)
       if (listRes.ok) setItems(await listRes.json())
       setNewTitle('')
@@ -212,35 +272,8 @@ function ChecklistSection({ projectId, initialItems }) {
   }
 
   return (
-    <section>
-      <h2 className="text-lg font-medium mb-3">Checklist</h2>
-      {items.length > 0 ? (
-        <ul className="space-y-2 mb-4">
-          {items.map(item => (
-            <li key={item.id} className="flex items-center gap-3 group">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={!!item.checked}
-                onChange={() => handleToggle(item.id)}
-              />
-              <span className={`flex-1 ${item.checked ? 'line-through text-base-content/40' : ''}`}>
-                {item.title}
-              </span>
-              <button
-                className="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 text-error"
-                onClick={() => handleDelete(item.id)}
-                title="Delete"
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-base-content/40 text-sm mb-4">No checklist items yet.</p>
-      )}
-      <form onSubmit={handleAdd} className="flex gap-2">
+    <div className="flex flex-col h-full">
+      <form onSubmit={handleAdd} className="flex gap-2 mb-3">
         <input
           type="text"
           className="input input-bordered input-sm flex-1"
@@ -252,12 +285,41 @@ function ChecklistSection({ projectId, initialItems }) {
           {adding ? <span className="loading loading-spinner loading-xs" /> : 'Add'}
         </button>
       </form>
-    </section>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {items.length > 0 ? (
+          <ul className="space-y-2">
+            {items.map(item => (
+              <li key={item.id} className="flex items-center gap-3 group px-2 py-1 rounded-lg hover:bg-base-300 transition-colors">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={!!item.checked}
+                  onChange={() => handleToggle(item.id)}
+                />
+                <span className={`flex-1 text-sm ${item.checked ? 'line-through text-base-content/40' : ''}`}>
+                  {item.title}
+                </span>
+                <button
+                  className="btn btn-xs btn-ghost text-error opacity-0 group-hover:opacity-100"
+                  onClick={() => handleDelete(item.id)}
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-base-content/40 text-sm px-2">No checklist items yet.</p>
+        )}
+      </div>
+    </div>
   )
 }
 
 export default function ProjectDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { setCrumb } = useBreadcrumb()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -314,16 +376,31 @@ export default function ProjectDetail() {
       setProject(prev => ({ ...prev, patterns: prev.patterns.filter(p => p.id !== patternId) })),
   }
 
+  const removeMaterial = (materialId) =>
+    setProject(prev => ({ ...prev, materials: prev.materials.filter(m => m.id !== materialId) }))
+
+  async function handleDeleteProject() {
+    if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
+    await fetch(`http://localhost:8000/api/projects/${id}`, { method: 'DELETE' })
+    navigate('/projects')
+  }
+
   return (
     <>
       {previewPattern && (
         <PreviewModal pattern={previewPattern} onClose={() => setPreviewPattern(null)} />
       )}
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="flex flex-col h-full gap-6">
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
+        <div className="shrink-0">
+          <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-semibold">{project.name}</h1>
+            <div className="flex gap-2">
+              <button className="btn btn-ghost btn-sm text-error" onClick={handleDeleteProject}>
+                <Trash2 className="w-4 h-4" /> Delete project
+              </button>
+              <Link to="/projects" className="btn btn-ghost btn-sm">← Projects</Link>
+            </div>
           </div>
           {project.description && (
             <p className="text-base-content/70">{project.description}</p>
@@ -336,62 +413,66 @@ export default function ProjectDetail() {
           </div>
         </div>
 
-        {/* Patterns */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-medium">Patterns</h2>
-            <Link to={`/projects/${id}/patterns/add`} className="btn btn-primary btn-sm">
-              + Add Pattern
-            </Link>
-          </div>
-          {project.patterns?.length > 0 ? (
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {project.patterns.map(p => (
-                <PatternCard
-                  key={p.id}
-                  pattern={p}
-                  projectId={id}
-                  onDelete={patternHandlers}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-base-content/40 text-sm">No patterns added yet.</p>
-          )}
-        </section>
+        {/* 3-column content */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
 
-        {/* Materials */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-medium">Materials</h2>
-            <Link to={`/projects/${id}/materials/add`} className="btn btn-primary btn-sm">
-              + Add Material
-            </Link>
-          </div>
-          {project.materials?.length > 0 ? (
-            <div className="grid gap-3">
-              {project.materials.map(m => (
-                <div key={m.id} className="card bg-base-100 border border-base-300">
-                  <div className="card-body py-3">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium">{m.name}</p>
-                      {m.purchased && <span className="badge badge-success badge-sm">Purchased</span>}
-                    </div>
-                    {m.quantity && (
-                      <p className="text-sm text-base-content/60">{m.quantity} {m.unit}</p>
-                    )}
-                    {m.notes && <p className="text-sm">{m.notes}</p>}
-                  </div>
+          {/* Patterns */}
+          <div className="bg-base-200 rounded-xl p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <h2 className="text-lg font-medium">Patterns</h2>
+              <Link to={`/projects/${id}/patterns/add`} className="btn btn-primary btn-sm">+ Add</Link>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {project.patterns?.length > 0 ? (
+                <div className="space-y-1">
+                  {project.patterns.map(p => (
+                    <PatternRow
+                      key={p.id}
+                      pattern={p}
+                      projectId={id}
+                      onDelete={patternHandlers}
+                    />
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <p className="text-base-content/40 text-sm px-2">No patterns added yet.</p>
+              )}
             </div>
-          ) : (
-            <p className="text-base-content/40 text-sm">No materials added yet.</p>
-          )}
-        </section>
+          </div>
 
-        {/* Checklist */}
-        <ChecklistSection projectId={id} initialItems={project.checklist ?? []} />
+          {/* Materials */}
+          <div className="bg-base-200 rounded-xl p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <h2 className="text-lg font-medium">Materials</h2>
+              <Link to={`/projects/${id}/materials/add`} className="btn btn-primary btn-sm">+ Add</Link>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {project.materials?.length > 0 ? (
+                <div className="space-y-1">
+                  {project.materials.map(m => (
+                    <MaterialRow
+                      key={m.id}
+                      material={m}
+                      projectId={id}
+                      onDelete={removeMaterial}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-base-content/40 text-sm px-2">No materials added yet.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Checklist */}
+          <div className="bg-base-200 rounded-xl p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <h2 className="text-lg font-medium">Checklist</h2>
+            </div>
+            <ChecklistSection projectId={id} initialItems={project.checklist ?? []} />
+          </div>
+
+        </div>
       </div>
     </>
   )

@@ -140,7 +140,7 @@ def get_materials(project_id: int):
 @router.post("/{project_id}/materials", response_model=dict)
 def add_material(project_id: int, data: ProjectMaterialCreate):
     return project_service.add_material(
-        project_id, data.name, data.quantity, data.notes
+        project_id, data.name, data.quantity, data.notes, data.image_url
     )
 
 

@@ -42,10 +42,12 @@ export default function AddMaterial() {
       {/* Two-column layout */}
       <div className="grid grid-cols-2 gap-6 min-h-0 flex-1">
         {/* Left: search stores */}
-        <SearchSection onSave={saveMaterial} />
+        <div className="bg-base-200 rounded-xl p-4 flex flex-col min-h-0">
+          <SearchSection onSave={saveMaterial} />
+        </div>
 
         {/* Right: manual add */}
-        <div className="overflow-y-auto pr-1">
+        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto">
           <ManualSection onSave={saveMaterial} onDone={() => navigate(`/projects/${id}`)} />
         </div>
       </div>
@@ -90,7 +92,7 @@ function SearchSection({ onSave }) {
     setSavingKey(key)
     try {
       const notes = [material.price, material.url].filter(Boolean).join(' — ')
-      await onSave({ name: material.title, quantity: '', notes })
+      await onSave({ name: material.title, quantity: '', notes, image_url: material.image_url ?? null })
       setSaved(prev => new Set([...prev, key]))
     } finally {
       setSavingKey(null)
@@ -98,7 +100,7 @@ function SearchSection({ onSave }) {
   }
 
   return (
-    <div className="flex flex-col min-h-0">
+    <div className="flex flex-col flex-1 min-h-0">
       <h2 className="text-lg font-medium mb-4 shrink-0">Search fabric stores</h2>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-4 shrink-0">

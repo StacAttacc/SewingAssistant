@@ -29,6 +29,7 @@ class ProjectMaterialCreate(BaseModel):
     name: str
     quantity: str = ""
     notes: str = ""
+    image_url: str | None = None
 
 
 # --- Response models (what the API returns) ---
@@ -69,6 +70,7 @@ class ProjectMaterial(BaseModel):
     quantity: str
     notes: str
     purchased: int  # 0 or 1
+    image_url: str | None = None
     created_at: str
 
 

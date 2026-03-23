@@ -49,6 +49,12 @@ def init_db():
                 quantity    TEXT NOT NULL DEFAULT '',
                 notes       TEXT NOT NULL DEFAULT '',
                 purchased   INTEGER NOT NULL DEFAULT 0,
+                image_url   TEXT,
                 created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        # Migrate existing DBs that predate the image_url column
+        try:
+            conn.execute("ALTER TABLE project_materials ADD COLUMN image_url TEXT")
+        except Exception:
+            pass  # column already exists

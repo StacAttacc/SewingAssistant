@@ -3,6 +3,7 @@ from repositories import project_repository
 
 # --- Projects ---
 
+
 def list_projects() -> list[dict]:
     return project_repository.get_all_projects()
 
@@ -20,6 +21,7 @@ def delete_project(project_id: int) -> None:
 
 
 # --- Checklist ---
+
 
 def get_checklist(project_id: int) -> list[dict]:
     return project_repository.get_checklist(project_id)
@@ -39,12 +41,22 @@ def delete_checklist_item(item_id: int, project_id: int) -> None:
 
 # --- Saved patterns ---
 
+
 def get_saved_patterns(project_id: int) -> list[dict]:
     return project_repository.get_saved_patterns(project_id)
 
 
-def save_pattern(project_id: int, source: str, title: str, url: str, image_url: str | None, price: str | None) -> dict:
-    return project_repository.save_pattern(project_id, source, title, url, image_url, price)
+def save_pattern(
+    project_id: int,
+    source: str,
+    title: str,
+    url: str,
+    image_url: str | None,
+    price: str | None,
+) -> dict:
+    return project_repository.save_pattern(
+        project_id, source, title, url, image_url, price
+    )
 
 
 def delete_saved_pattern(pattern_id: int, project_id: int) -> None:
@@ -53,12 +65,15 @@ def delete_saved_pattern(pattern_id: int, project_id: int) -> None:
 
 # --- Project materials ---
 
+
 def get_materials(project_id: int) -> list[dict]:
     return project_repository.get_materials(project_id)
 
 
-def add_material(project_id: int, name: str, quantity: str, notes: str) -> dict:
-    return project_repository.add_material(project_id, name, quantity, notes)
+def add_material(
+    project_id: int, name: str, quantity: str, notes: str, image_url: str | None = None
+) -> dict:
+    return project_repository.add_material(project_id, name, quantity, notes, image_url)
 
 
 def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:

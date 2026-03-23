@@ -9,11 +9,11 @@ export default function Layout() {
 
   return (
     <BreadcrumbProvider>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col h-screen overflow-hidden">
         <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-hidden">
           <Sidebar open={sidebarOpen} />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 flex flex-col overflow-hidden">
             <Outlet />
           </main>
         </div>
