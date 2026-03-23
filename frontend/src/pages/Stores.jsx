@@ -1,0 +1,163 @@
+import { useState } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { Phone, Globe, Clock } from 'lucide-react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+// Fix Leaflet's missing marker icons when bundled with Vite
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
+
+const MONTREAL = [45.5017, -73.5673]
+
+function MapRecenter({ center }) {
+  const map = useMap()
+  if (center) map.setView(center, 12)
+  return null
+}
+
+export default function Stores() {
+  const [city, setCity] = useState('Montreal')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [stores, setStores] = useState([])
+  const [mapCenter, setMapCenter] = useState(MONTREAL)
+  const [searched, setSearched] = useState(false)
+
+  async function handleSearch(e) {
+    e.preventDefault()
+    if (!city.trim()) return
+    setLoading(true)
+    setError(null)
+
+    try {
+      // 1. Geocode city → lat/lon via Nominatim
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      )
+      const geoData = await geoRes.json()
+      if (!geoData.length) throw new Error(`City "${city}" not found.`)
+
+      const lat = parseFloat(geoData[0].lat)
+      const lon = parseFloat(geoData[0].lon)
+      setMapCenter([lat, lon])
+
+      // 2. Find nearby stores
+      const storesRes = await fetch('http://localhost:8000/api/stores/nearby', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lon, radius_m: 10000 }),
+      })
+      if (!storesRes.ok) throw new Error(`Server error ${storesRes.status}`)
+      const data = await storesRes.json()
+      setStores(data.stores)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+      setSearched(true)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full gap-4">
+      {/* Header */}
+      <div className="shrink-0">
+        <h1 className="text-2xl font-semibold">Nearby Stores</h1>
+      </div>
+
+      {/* Search bar */}
+      <form onSubmit={handleSearch} className="flex gap-2 shrink-0">
+        <input
+          type="text"
+          className="input input-bordered flex-1"
+          placeholder="City name…"
+          value={city}
+          onChange={e => setCity(e.target.value)}
+        />
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? <span className="loading loading-spinner loading-sm" /> : 'Search'}
+        </button>
+      </form>
+
+      {error && (
+        <div className="alert alert-error shrink-0"><span>{error}</span></div>
+      )}
+
+      {/* Content */}
+      <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+
+        {/* Store list */}
+        <div className="bg-base-200 rounded-xl p-4 flex flex-col min-h-0">
+          <p className="text-sm text-base-content/50 mb-3 shrink-0">
+            {!searched
+              ? 'Search a city to find nearby fabric & sewing stores.'
+              : stores.length > 0
+                ? `${stores.length} store${stores.length !== 1 ? 's' : ''} found within 10 km`
+                : 'No stores found in this area.'}
+          </p>
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
+            {stores.map((store, i) => (
+              <div key={i} className="bg-base-100 rounded-lg p-3 space-y-1">
+                <p className="font-medium">{store.name}</p>
+                {store.address && store.address !== 'Address not available' && (
+                  <p className="text-sm text-base-content/60">{store.address}</p>
+                )}
+                {store.opening_hours && (
+                  <p className="text-xs text-base-content/50 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {store.opening_hours}
+                  </p>
+                )}
+                <div className="flex gap-3 mt-1">
+                  {store.phone && (
+                    <a href={`tel:${store.phone}`} className="text-xs text-primary flex items-center gap-1 hover:underline">
+                      <Phone className="w-3 h-3" /> {store.phone}
+                    </a>
+                  )}
+                  {store.website && (
+                    <a href={store.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                      <Globe className="w-3 h-3" /> Website
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Map */}
+        <div className="bg-base-200 rounded-xl p-4">
+          <MapContainer
+            center={MONTREAL}
+            zoom={12}
+            className="w-full h-full rounded-lg"
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            />
+            <MapRecenter center={mapCenter} />
+            {stores.map((store, i) => (
+              store.lat && store.lon
+                ? <Marker key={i} position={[store.lat, store.lon]}>
+                    <Popup>
+                      <strong>{store.name}</strong>
+                      {store.address && store.address !== 'Address not available' && (
+                        <><br />{store.address}</>
+                      )}
+                    </Popup>
+                  </Marker>
+                : null
+            ))}
+          </MapContainer>
+        </div>
+
+      </div>
+    </div>
+  )
+}
