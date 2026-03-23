@@ -34,6 +34,14 @@ def delete_project(project_id: int) -> None:
         conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
 
 
+def save_measurements(project_id: int, measurements_json: str) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE projects SET measurements = ? WHERE id = ?",
+            (measurements_json, project_id),
+        )
+
+
 # --- Checklist ---
 
 

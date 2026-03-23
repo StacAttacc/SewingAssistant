@@ -1,3 +1,4 @@
+import json
 from repositories import project_repository
 
 
@@ -18,6 +19,10 @@ def create_project(name: str, description: str, budget: float | None) -> dict:
 
 def delete_project(project_id: int) -> None:
     project_repository.delete_project(project_id)
+
+
+def save_measurements(project_id: int, measurements: dict) -> None:
+    project_repository.save_measurements(project_id, json.dumps(measurements))
 
 
 # --- Checklist ---

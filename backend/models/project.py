@@ -32,6 +32,19 @@ class ProjectMaterialCreate(BaseModel):
     image_url: str | None = None
 
 
+class MeasurementsUpdate(BaseModel):
+    waist: float | None = None
+    hips: float | None = None
+    height: float | None = None
+    bust: float | None = None
+
+
+class GeneratePatternRequest(BaseModel):
+    garment_type: str  # "skirt" (others later)
+    style_params: dict
+    measurements: dict
+
+
 # --- Response models (what the API returns) ---
 
 
@@ -81,6 +94,7 @@ class ProjectDetail(BaseModel):
     name: str
     description: str
     budget: float | None
+    measurements: dict | None = None
     created_at: str
     patterns: list[ProjectPattern]
     materials: list[ProjectMaterial]

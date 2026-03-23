@@ -58,3 +58,8 @@ def init_db():
             conn.execute("ALTER TABLE project_materials ADD COLUMN image_url TEXT")
         except Exception:
             pass  # column already exists
+        # Migrate existing DBs that predate the measurements column
+        try:
+            conn.execute("ALTER TABLE projects ADD COLUMN measurements TEXT")
+        except Exception:
+            pass  # column already exists

@@ -9,6 +9,7 @@ dependencies = [
     "ddgs>=9.10.0",
     "fastapi>=0.129.0",
     "httpx>=0.28.1",
+    "pygarment==2.0.2",
     "uvicorn>=0.41.0",
 ]
 

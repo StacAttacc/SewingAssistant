@@ -1,7 +1,9 @@
+import json
 import os
 import uuid
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from services import project_service
+from services import pattern_generator
 
 UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
 from models.project import (
@@ -14,6 +16,8 @@ from models.project import (
     ProjectMaterialCreate,
     ProjectMaterial,
     ProjectDetail,
+    MeasurementsUpdate,
+    GeneratePatternRequest,
 )
 
 router = APIRouter()
@@ -32,9 +36,12 @@ def get_project(project_id: int):
     project = project_service.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    measurements_raw = project.get("measurements")
+    measurements = json.loads(measurements_raw) if measurements_raw else None
     return ProjectDetail.model_validate(
         {
             **project,
+            "measurements": measurements,
             "patterns": project_service.get_saved_patterns(project_id),
             "materials": project_service.get_materials(project_id),
             "checklist": project_service.get_checklist(project_id),
@@ -51,6 +58,37 @@ def create_project(data: ProjectCreate):
 def delete_project(project_id: int):
     project_service.delete_project(project_id)
     return {"deleted": project_id}
+
+
+@router.patch("/{project_id}/measurements", response_model=dict)
+def update_measurements(project_id: int, data: MeasurementsUpdate):
+    project_service.save_measurements(project_id, data.model_dump(exclude_none=True))
+    return {"saved": True}
+
+
+@router.post("/{project_id}/patterns/generate", response_model=list[ProjectPattern])
+def generate_pattern(project_id: int, req: GeneratePatternRequest):
+    project = project_service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if req.garment_type == "skirt":
+        result = pattern_generator.generate_skirt(req.measurements, req.style_params)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported garment type: {req.garment_type}")
+
+    # Save the combined PDF as the pattern record
+    saved = project_service.save_pattern(
+        project_id,
+        source="generated",
+        title=result["title"],
+        url=result["pdf_url"],
+        image_url=None,
+        price=None,
+    )
+    # Fetch and return the saved pattern
+    patterns = project_service.get_saved_patterns(project_id)
+    return [p for p in patterns if p["id"] == saved["id"]]
 
 
 # --- Checklist ---
