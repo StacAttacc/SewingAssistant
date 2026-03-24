@@ -136,19 +136,15 @@ function PatternRow({ pattern, projectId, onDelete }) {
       <div className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300">
         {renderThumbnail()}
       </div>
-      <span className="flex-1 text-sm font-medium truncate min-w-0">
-        {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
-      </span>
-      <button
-        className="btn btn-xs btn-ghost"
-        onClick={handleAction}
-        title={isUpload ? 'Preview' : 'Open'}
-      >
-        {isUpload
-          ? <Eye className="w-4 h-4" />
-          : <ExternalLink className="w-4 h-4" />
-        }
-      </button>
+      {isUpload ? (
+        <button className="flex-1 text-sm font-medium truncate min-w-0 text-left hover:underline cursor-pointer" onClick={handleAction}>
+          {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
+        </button>
+      ) : (
+        <a href={pattern.url} target="_blank" rel="noreferrer" className="flex-1 text-sm font-medium truncate min-w-0 hover:underline">
+          {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
+        </a>
+      )}
       <button
         className="btn btn-xs btn-ghost text-error"
         onClick={handleDelete}
@@ -186,24 +182,16 @@ function MaterialRow({ material, projectId, onDelete }) {
         }
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{material.name}</p>
+        {url ? (
+          <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium truncate block hover:underline">{material.name}</a>
+        ) : (
+          <p className="text-sm font-medium truncate">{material.name}</p>
+        )}
         {material.quantity && (
           <p className="text-xs text-base-content/50 truncate">{material.quantity}{material.unit ? ` ${material.unit}` : ''}</p>
         )}
       </div>
-      {url ? (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-xs btn-ghost"
-          title="Open"
-        >
-          <ExternalLink className="w-4 h-4" />
-        </a>
-      ) : (
-        <span className="w-7" />
-      )}
+      <span className="w-7" />
       <button
         className="btn btn-xs btn-ghost text-error"
         onClick={handleDelete}

@@ -73,15 +73,18 @@ function SearchSection({ projectId, onSave }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: Number(projectId) }),
       })
-      if (res.ok) setQuery(await res.json())
+      if (res.ok) {
+        const suggestion = await res.json()
+        setQuery(suggestion)
+        doSearch(suggestion)
+      }
     } finally {
       setSuggesting(false)
     }
   }
 
-  async function handleSearch(e) {
-    e.preventDefault()
-    if (!query.trim()) return
+  async function doSearch(q) {
+    if (!q.trim()) return
     setLoading(true)
     setResults([])
 
@@ -90,7 +93,7 @@ function SearchSection({ projectId, onSave }) {
         fetch('http://localhost:8000/api/materials/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, source }),
+          body: JSON.stringify({ query: q, source }),
         }).then(r => r.ok ? r.json() : Promise.reject())
       )
     )
@@ -100,6 +103,11 @@ function SearchSection({ projectId, onSave }) {
       .flatMap(r => r.value)
     setResults(allResults)
     setLoading(false)
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault()
+    doSearch(query)
   }
 
   async function handleAdd(material) {
@@ -152,7 +160,7 @@ function SearchSection({ projectId, onSave }) {
                 <img src={m.image_url} alt={m.title} className="w-14 h-14 object-cover rounded shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium line-clamp-2 text-sm">{m.title}</p>
+                <a href={m.url} target="_blank" rel="noreferrer" className="font-medium line-clamp-2 text-sm hover:underline">{m.title}</a>
                 <div className="flex gap-2 text-xs text-base-content/50 mt-1">
                   {m.price && <span>{m.price}</span>}
                   <span className="capitalize">{m.source.replace(/_/g, ' ')}</span>

@@ -87,15 +87,18 @@ function ScrapeSection({ projectId, onSave }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: Number(projectId) }),
       })
-      if (res.ok) setQuery(await res.json())
+      if (res.ok) {
+        const suggestion = await res.json()
+        setQuery(suggestion)
+        doSearch(suggestion)
+      }
     } finally {
       setSuggesting(false)
     }
   }
 
-  async function handleSearch(e) {
-    e.preventDefault()
-    if (!query.trim()) return
+  async function doSearch(q) {
+    if (!q.trim()) return
     setLoading(true)
     setResults([])
 
@@ -104,7 +107,7 @@ function ScrapeSection({ projectId, onSave }) {
         fetch('http://localhost:8000/api/patterns/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, source }),
+          body: JSON.stringify({ query: q, source }),
         }).then(r => r.ok ? r.json() : Promise.reject())
       )
     )
@@ -114,6 +117,15 @@ function ScrapeSection({ projectId, onSave }) {
       .flatMap(r => r.value)
     setResults(allResults)
     setLoading(false)
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault()
+    if (!query.trim()) return
+    setLoading(true)
+    setResults([])
+
+    doSearch(query)
   }
 
   async function handleAdd(pattern) {
@@ -170,7 +182,7 @@ function ScrapeSection({ projectId, onSave }) {
                 <img src={p.image_url} alt={p.title} className="w-14 h-14 object-cover rounded shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium line-clamp-2 text-sm">{p.title}</p>
+                <a href={p.url} target="_blank" rel="noreferrer" className="font-medium line-clamp-2 text-sm hover:underline">{p.title}</a>
                 <div className="flex gap-2 text-xs text-base-content/50 mt-1">
                   {p.pattern_number && <span>{p.pattern_number}</span>}
                   {p.price && <span>{p.price}</span>}
