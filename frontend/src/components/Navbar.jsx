@@ -4,6 +4,7 @@ import { useBreadcrumb } from '../contexts/BreadcrumbContext'
 const crumbMap = {
   '/': 'Home',
   '/projects': 'Projects',
+  '/stores': 'Stores',
 }
 
 export default function Navbar({ onToggleSidebar }) {
@@ -12,7 +13,8 @@ export default function Navbar({ onToggleSidebar }) {
   const projectIdMatch = pathname.match(/\/projects\/(\d+)/)
   const projectId = projectIdMatch?.[1]
   const isAddPattern = /\/projects\/\d+\/patterns\/add/.test(pathname)
-  const isProjectDetail = pathname.startsWith('/projects/') && !isAddPattern
+  const isAddMaterial = /\/projects\/\d+\/materials\/add/.test(pathname)
+  const isProjectDetail = !!projectId && !isAddPattern && !isAddMaterial
 
   return (
     <nav className="navbar bg-base-100 border-b border-base-300 px-4 gap-4">
@@ -35,9 +37,15 @@ export default function Navbar({ onToggleSidebar }) {
               {crumb && <li><Link to={`/projects/${projectId}`}>{crumb}</Link></li>}
               <li className="font-medium">Add Pattern</li>
             </>
+          ) : isAddMaterial ? (
+            <>
+              <li><Link to="/projects">Projects</Link></li>
+              {crumb && <li><Link to={`/projects/${projectId}`}>{crumb}</Link></li>}
+              <li className="font-medium">Add Material</li>
+            </>
           ) : isProjectDetail ? (
             <>
-              <li><Link to="/projects" className="font-medium">Projects</Link></li>
+              <li><Link to="/projects">Projects</Link></li>
               {crumb && <li className="font-medium">{crumb}</li>}
             </>
           ) : (

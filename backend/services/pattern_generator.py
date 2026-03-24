@@ -343,18 +343,21 @@ def _make_rectangle_svg(uid, index, label, width, height, note=""):
 
 def _panels_to_pdf(uid: str, svg_paths: list[str]) -> str:
     """Combine all panel SVGs into a single tiled PDF (2 columns)."""
+    import base64
     import re
     import cairosvg  # type: ignore[import-untyped]  # noqa: PLC0415
     import svgwrite  # type: ignore[import-untyped]  # noqa: PLC0415
 
-    # Parse each SVG's canvas size
+    # Convert each SVG to PNG and encode as base64 data URI
     panels = []
     for p in svg_paths:
         with open(p) as f:
             content = f.read()
         w = float(re.search(r'width="([\d.]+)px"', content).group(1))
         h = float(re.search(r'height="([\d.]+)px"', content).group(1))
-        panels.append((p, w, h, content))
+        png_bytes = cairosvg.svg2png(url=p)
+        data_uri = "data:image/png;base64," + base64.b64encode(png_bytes).decode()
+        panels.append((data_uri, w, h))
 
     cols = 2
     rows = math.ceil(len(panels) / cols)
@@ -362,7 +365,7 @@ def _panels_to_pdf(uid: str, svg_paths: list[str]) -> str:
 
     col_widths = [0.0] * cols
     row_heights = [0.0] * rows
-    for idx, (_, w, h, _) in enumerate(panels):
+    for idx, (_, w, h) in enumerate(panels):
         c, r = idx % cols, idx // cols
         col_widths[c] = max(col_widths[c], w)
         row_heights[r] = max(row_heights[r], h)
@@ -370,7 +373,7 @@ def _panels_to_pdf(uid: str, svg_paths: list[str]) -> str:
     total_w = sum(col_widths) + gap * (cols + 1)
     total_h = sum(row_heights) + gap * (rows + 1)
 
-    # Build composite SVG
+    # Build composite SVG with embedded PNG images
     composite = svgwrite.Drawing(
         size=(f"{total_w}px", f"{total_h}px"),
         viewBox=f"0 0 {total_w} {total_h}",
@@ -384,10 +387,10 @@ def _panels_to_pdf(uid: str, svg_paths: list[str]) -> str:
             idx = r * cols + c
             if idx >= len(panels):
                 break
-            _, pw, ph, _ = panels[idx]
+            data_uri, pw, ph = panels[idx]
             composite.add(
                 composite.image(
-                    href=os.path.abspath(panels[idx][0]),
+                    href=data_uri,
                     insert=(x_cursor, y_cursor),
                     size=(pw, ph),
                 )

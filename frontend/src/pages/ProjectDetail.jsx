@@ -58,7 +58,7 @@ function PreviewModal({ pattern, onClose }) {
 }
 
 function PatternRow({ pattern, projectId, onDelete }) {
-  const isUpload = pattern.source === 'upload'
+  const isUpload = pattern.source === 'upload' || pattern.source === 'generated'
   const isPDF = pattern.url?.endsWith('.pdf')
 
   function renderThumbnail() {
