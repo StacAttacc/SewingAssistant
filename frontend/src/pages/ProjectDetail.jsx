@@ -12,11 +12,7 @@ function PreviewModal({ pattern, onClose }) {
   const src = `http://localhost:8000${pattern.url}`
 
   function handlePrint() {
-    if (isPDF) {
-      iframeRef.current?.contentWindow?.print()
-    } else {
-      window.open(src, '_blank', 'noopener')
-    }
+    window.open(src, '_blank', 'noopener')
   }
 
   return (
