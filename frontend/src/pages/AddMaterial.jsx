@@ -43,7 +43,7 @@ export default function AddMaterial() {
       <div className="grid grid-cols-2 gap-6 min-h-0 flex-1">
         {/* Left: search stores */}
         <div className="bg-base-200 rounded-xl p-4 flex flex-col min-h-0">
-          <SearchSection onSave={saveMaterial} />
+          <SearchSection projectId={id} onSave={saveMaterial} />
         </div>
 
         {/* Right: manual add */}
@@ -57,12 +57,27 @@ export default function AddMaterial() {
 
 // --- Search Section ---
 
-function SearchSection({ onSave }) {
+function SearchSection({ projectId, onSave }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(new Set())
   const [savingKey, setSavingKey] = useState(null)
+  const [suggesting, setSuggesting] = useState(false)
+
+  async function handleSuggest() {
+    setSuggesting(true)
+    try {
+      const res = await fetch('http://localhost:8000/api/llm/suggest-materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: Number(projectId) }),
+      })
+      if (res.ok) setQuery(await res.json())
+    } finally {
+      setSuggesting(false)
+    }
+  }
 
   async function handleSearch(e) {
     e.preventDefault()
@@ -111,6 +126,9 @@ function SearchSection({ onSave }) {
           value={query}
           onChange={e => setQuery(e.target.value)}
         />
+        <button type="button" className="btn btn-outline btn-secondary" disabled={suggesting || loading} onClick={handleSuggest}>
+          {suggesting ? <span className="loading loading-spinner loading-sm" /> : 'Suggest'}
+        </button>
         <button type="submit" className="btn btn-primary" disabled={loading}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Search'}
         </button>
