@@ -18,11 +18,15 @@ async def find_nearby_stores(lat: float, lon: float, radius_m: int = 10000) -> l
     out body;
     """
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(OVERPASS_URL, data={"data": query}, timeout=30)
-        resp.raise_for_status()
-
-    elements = resp.json().get("elements", [])
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(OVERPASS_URL, data={"data": query}, timeout=30)
+            resp.raise_for_status()
+            elements = resp.json().get("elements", [])
+    except httpx.TimeoutException:
+        return []
+    except httpx.HTTPError:
+        return []
     return [
         {
             "name": el.get("tags", {}).get("name", "Unnamed store"),
