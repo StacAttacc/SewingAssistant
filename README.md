@@ -1,3 +1,5 @@
+https://trello.com/b/oglz1pU7/sewing-assistant
+
 how to run the project
 1. open a terminal and navigate to the backend folder
 2. in the terminal at that location, input this command: uv run uvicorn main:app
