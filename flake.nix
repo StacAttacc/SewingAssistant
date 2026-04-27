@@ -22,8 +22,11 @@
             ];
 
             shellHook = ''
-              echo "frontend:  cd frontend && npm install && npm run dev"
-              echo "backend:   cd backend && uv sync && uv run uvicorn main:app --reload"
+              npm --prefix frontend install
+              uv sync --project backend
+              export PATH="$PWD/bin:$PATH"
+              echo "frontend:  run 'frontend'"
+              echo "backend:   run 'backend'"
             '';
           };
         }
