@@ -11,21 +11,18 @@ async def find_nearby_stores(lat: float, lon: float, radius_m: int = 10000) -> l
     [out:json][timeout:25];
     (
         node["shop"="fabric"](around:{radius_m},{lat},{lon});
-        node["shop"="sewing"](around:{radius_m},{lat},{lon});
-        node["craft"="sewing"](around:{radius_m},{lat},{lon});
-        node["shop"="craft"](around:{radius_m},{lat},{lon});
+        node["shop"="haberdashery"](around:{radius_m},{lat},{lon});
     );
     out body;
     """
 
     try:
-        async with httpx.AsyncClient() as client:
+        headers = {"User-Agent": "SewingAssistant/1.0 (store finder)"}
+        async with httpx.AsyncClient(headers=headers) as client:
             resp = await client.post(OVERPASS_URL, data={"data": query}, timeout=30)
             resp.raise_for_status()
             elements = resp.json().get("elements", [])
-    except httpx.TimeoutException:
-        return []
-    except httpx.HTTPError:
+    except Exception:
         return []
     return [
         {
