@@ -7,29 +7,24 @@ const links = [
   { to: '/stores', label: 'Stores', Icon: MapPin },
 ]
 
-export default function Sidebar({ open }) {
+export default function BottomNav() {
   return (
-    <aside
-      className={`
-        hidden md:flex flex-col gap-1 py-4 bg-base-200 min-h-screen shrink-0
-        transition-all duration-200
-        ${open ? 'w-56 px-4' : 'w-15 px-2'}
-      `}
-    >
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-base-100 border-t border-base-300">
       {links.map(({ to, label, Icon }) => (
         <NavLink
           key={to}
           to={to}
           end={to === '/'}
-          title={!open ? label : undefined}
           className={({ isActive }) =>
-            `btn btn-ghost justify-start gap-3 px-2 ${isActive ? 'btn-active' : ''}`
+            `flex flex-col items-center justify-center flex-1 py-2 gap-0.5 text-xs transition-colors ${
+              isActive ? 'text-primary' : 'text-base-content/60'
+            }`
           }
         >
-          <Icon size={20} className="shrink-0" />
-          {open && <span>{label}</span>}
+          <Icon size={20} />
+          <span>{label}</span>
         </NavLink>
       ))}
-    </aside>
+    </nav>
   )
 }

@@ -257,7 +257,7 @@ function ChecklistSection({ projectId, initialItems }) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col md:h-full">
       <form onSubmit={handleAdd} className="flex gap-2 mb-3">
         <input
           type="text"
@@ -270,7 +270,7 @@ function ChecklistSection({ projectId, initialItems }) {
           {adding ? <span className="loading loading-spinner loading-xs" /> : 'Add'}
         </button>
       </form>
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="md:flex-1 md:min-h-0 overflow-y-auto">
         {items.length > 0 ? (
           <ul className="space-y-2">
             {items.map(item => (
@@ -379,7 +379,7 @@ export default function ProjectDetail() {
       {previewPattern && (
         <PreviewModal pattern={previewPattern} onClose={() => setPreviewPattern(null)} />
       )}
-      <div className="flex flex-col h-full gap-6">
+      <div className="flex flex-col md:h-full gap-6">
         {/* Header */}
         <div className="shrink-0">
           <div className="flex items-center justify-between mb-2">
@@ -403,7 +403,7 @@ export default function ProjectDetail() {
         </div>
 
         {/* 3-column content */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:flex-1 md:min-h-0">
 
           {/* Patterns */}
           <div className="bg-base-200 rounded-xl p-4 flex flex-col">
@@ -411,7 +411,7 @@ export default function ProjectDetail() {
               <h2 className="text-lg font-medium">Patterns</h2>
               <Link to={`/projects/${id}/patterns/add`} className="btn btn-primary btn-sm">+ Add</Link>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="md:flex-1 md:min-h-0 overflow-y-auto">
               {project.patterns?.length > 0 ? (
                 <div className="space-y-1">
                   {project.patterns.map(p => (
@@ -435,7 +435,7 @@ export default function ProjectDetail() {
               <h2 className="text-lg font-medium">Materials</h2>
               <Link to={`/projects/${id}/materials/add`} className="btn btn-primary btn-sm">+ Add</Link>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="md:flex-1 md:min-h-0 overflow-y-auto">
               {project.materials?.length > 0 ? (
                 <div className="space-y-1">
                   {project.materials.map(m => (

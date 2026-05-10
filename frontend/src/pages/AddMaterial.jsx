@@ -31,7 +31,7 @@ export default function AddMaterial() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col md:h-full gap-4">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-semibold">Add Material</h1>
@@ -41,9 +41,9 @@ export default function AddMaterial() {
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-2 gap-6 min-h-0 flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:min-h-0 md:flex-1">
         {/* Left: search stores */}
-        <div className="bg-base-200 rounded-xl p-4 flex flex-col min-h-0">
+        <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0">
           <SearchSection projectId={id} onSave={saveMaterial} />
         </div>
 
@@ -124,7 +124,7 @@ function SearchSection({ projectId, onSave }) {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex flex-col md:flex-1 md:min-h-0">
       <h2 className="text-lg font-medium mb-4 shrink-0">Search fabric stores</h2>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-4 shrink-0">
@@ -143,7 +143,7 @@ function SearchSection({ projectId, onSave }) {
         </button>
       </form>
 
-      <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+      <div className="overflow-y-auto md:flex-1 md:min-h-0 space-y-3 pr-1">
         {loading && (
           <div className="flex justify-center py-12">
             <span className="loading loading-spinner loading-lg" />

@@ -19,7 +19,7 @@ export default function Navbar({ onToggleSidebar }) {
   return (
     <nav className="navbar bg-base-100 border-b border-base-300 px-4 gap-4">
       <button
-        className="btn btn-ghost btn-square"
+        className="hidden md:flex btn btn-ghost btn-square"
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
       >

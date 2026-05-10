@@ -68,7 +68,7 @@ export default function Stores() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col md:h-full gap-4">
       {/* Header */}
       <div className="shrink-0">
         <h1 className="text-2xl font-semibold">Nearby Stores</h1>
@@ -93,10 +93,10 @@ export default function Stores() {
       )}
 
       {/* Content */}
-      <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:flex-1 md:min-h-0">
 
         {/* Store list */}
-        <div className="bg-base-200 rounded-xl p-4 flex flex-col min-h-0">
+        <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0">
           <p className="text-sm text-base-content/50 mb-3 shrink-0">
             {!searched
               ? 'Search a city to find nearby fabric & sewing stores.'
@@ -104,7 +104,7 @@ export default function Stores() {
                 ? `${stores.length} store${stores.length !== 1 ? 's' : ''} found within 10 km`
                 : 'No stores found in this area.'}
           </p>
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
+          <div className="md:flex-1 md:min-h-0 overflow-y-auto space-y-2">
             {stores.map((store, i) => (
               <div key={i} className="bg-base-100 rounded-lg p-3 space-y-1">
                 <p className="font-medium">{store.name}</p>
@@ -138,7 +138,7 @@ export default function Stores() {
           <MapContainer
             center={MONTREAL}
             zoom={12}
-            className="w-full h-full rounded-lg"
+            className="w-full h-64 md:h-full rounded-lg"
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

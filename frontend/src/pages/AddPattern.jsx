@@ -32,7 +32,7 @@ export default function AddPattern() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col md:h-full gap-4">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-semibold">Add Pattern</h1>
@@ -50,13 +50,13 @@ export default function AddPattern() {
 
       {/* Tab content */}
       {activeTab === 'search' && (
-        <div className="bg-base-200 rounded-xl p-4 flex flex-col flex-1 min-h-0">
+        <div className="bg-base-200 rounded-xl p-4 flex flex-col md:flex-1 md:min-h-0">
           <ScrapeSection projectId={id} onSave={savePattern} />
         </div>
       )}
 
       {activeTab === 'manual' && (
-        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto flex-1 space-y-10">
+        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto md:flex-1 space-y-10">
           <UploadSection projectId={id} onDone={() => navigate(`/projects/${id}`)} />
           <div className="divider" />
           <ManualSection onSave={savePattern} onDone={() => navigate(`/projects/${id}`)} />
@@ -146,7 +146,7 @@ function ScrapeSection({ projectId, onSave }) {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex flex-col md:flex-1 md:min-h-0">
       <h2 className="text-lg font-medium mb-4 shrink-0">Search & scrape</h2>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-4 shrink-0">
@@ -165,7 +165,7 @@ function ScrapeSection({ projectId, onSave }) {
         </button>
       </form>
 
-      <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+      <div className="overflow-y-auto md:flex-1 md:min-h-0 space-y-3 pr-1">
         {loading && (
           <div className="flex justify-center py-12">
             <span className="loading loading-spinner loading-lg" />
@@ -408,7 +408,7 @@ function GenerateSection({ projectId, onDone }) {
   const flareLabel = styleParams.flare === 0 ? 'Straight' : styleParams.flare < 0.4 ? 'Slight' : styleParams.flare < 0.75 ? 'Full' : 'Circle'
 
   return (
-    <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:flex-1 md:min-h-0">
       {/* Left: form */}
       <div className="bg-base-200 rounded-xl p-4 overflow-y-auto">
         <form onSubmit={handleGenerate} className="space-y-6">
@@ -509,7 +509,7 @@ function GenerateSection({ projectId, onDone }) {
             <p className="text-sm text-base-content/60 shrink-0">
               Pattern saved to your project. Preview the PDF below.
             </p>
-            <div className="flex-1 min-h-0 rounded overflow-hidden border border-base-300">
+            <div className="h-64 md:flex-1 md:min-h-0 rounded overflow-hidden border border-base-300">
               <iframe
                 src={`${API}${generated.pdf_url}`}
                 className="w-full h-full"
