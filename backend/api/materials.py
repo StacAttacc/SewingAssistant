@@ -25,3 +25,5 @@ def search_fabrics(req: FabricSearchRequest):
         return material_service.search_fabrics(req.query, req.source)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))

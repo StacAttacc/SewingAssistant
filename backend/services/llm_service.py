@@ -3,6 +3,7 @@
 import anthropic
 
 MODEL = "claude-haiku-4-5-20251001"
+_client = anthropic.Anthropic()
 
 _PATTERN_SYSTEM = (
     "You are a sewing expert. Given a project name and description, "
@@ -18,16 +19,17 @@ _MATERIAL_SYSTEM = (
 
 
 def _call(system: str, name: str, description: str) -> str:
-    client = anthropic.Anthropic()
     user_msg = (
         f"Project: {name}\nDescription: {description or 'No description provided.'}"
     )
-    response = client.messages.create(
+    response = _client.messages.create(
         model=MODEL,
         max_tokens=16,
         system=system,
         messages=[{"role": "user", "content": user_msg}],
     )
+    if not response.content:
+        return ""
     return response.content[0].text.strip()
 
 

@@ -37,7 +37,10 @@ def get_project(project_id: int):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     measurements_raw = project.get("measurements")
-    measurements = json.loads(measurements_raw) if measurements_raw else None
+    try:
+        measurements = json.loads(measurements_raw) if measurements_raw else None
+    except (json.JSONDecodeError, ValueError):
+        measurements = None
     return ProjectDetail.model_validate(
         {
             **project,
@@ -62,6 +65,8 @@ def delete_project(project_id: int):
 
 @router.patch("/{project_id}/measurements", response_model=dict)
 def update_measurements(project_id: int, data: MeasurementsUpdate):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
     project_service.save_measurements(project_id, data.model_dump(exclude_none=True))
     return {"saved": True}
 
@@ -73,7 +78,7 @@ def generate_pattern(project_id: int, req: GeneratePatternRequest):
         raise HTTPException(status_code=404, detail="Project not found")
 
     if req.garment_type == "skirt":
-        result = pattern_generator.generate_skirt(req.measurements, req.style_params)
+        result = pattern_generator.generate_skirt(req.measurements.model_dump(), req.style_params.model_dump())
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported garment type: {req.garment_type}")
 
@@ -101,6 +106,8 @@ def get_checklist(project_id: int):
 
 @router.post("/{project_id}/checklist", response_model=dict)
 def add_checklist_item(project_id: int, data: ChecklistItemCreate):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
     return project_service.add_checklist_item(project_id, data.title, data.notes)
 
 
@@ -145,6 +152,8 @@ async def upload_pattern(
     file: UploadFile = File(...),
     title: str = Form(""),
 ):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
     ext = os.path.splitext(file.filename or "")[1].lower()
     allowed = {".pdf", ".jpg", ".jpeg", ".png", ".webp"}
     if ext not in allowed:
@@ -180,6 +189,8 @@ def get_materials(project_id: int):
 
 @router.post("/{project_id}/materials", response_model=dict)
 def add_material(project_id: int, data: ProjectMaterialCreate):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
     return project_service.add_material(
         project_id, data.name, data.quantity, data.notes, data.image_url
     )

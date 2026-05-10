@@ -80,6 +80,38 @@ def test_create_project_missing_name():
     assert resp.status_code == 422
 
 
+def test_create_project_empty_name():
+    resp = client.post("/api/projects/", json={"name": ""})
+    assert resp.status_code == 422
+
+
+def test_create_project_name_too_long():
+    resp = client.post("/api/projects/", json={"name": "x" * 201})
+    assert resp.status_code == 422
+
+
+def test_add_checklist_item_empty_title():
+    resp = client.post("/api/projects/1/checklist", json={"title": ""})
+    assert resp.status_code == 422
+
+
+# --- Measurements ---
+
+
+def test_update_measurements():
+    with patch("api.projects.project_service.get_project", return_value=PROJECT), \
+         patch("api.projects.project_service.save_measurements"):
+        resp = client.patch("/api/projects/1/measurements", json={"waist": 68.0, "hips": 92.0})
+    assert resp.status_code == 200
+    assert resp.json() == {"saved": True}
+
+
+def test_update_measurements_not_found():
+    with patch("api.projects.project_service.get_project", return_value=None):
+        resp = client.patch("/api/projects/999/measurements", json={"waist": 68.0})
+    assert resp.status_code == 404
+
+
 def test_delete_project():
     with patch("api.projects.project_service.delete_project"):
         resp = client.delete("/api/projects/1")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from services.store_finder import find_nearby_stores
 from scrapers.material_scraper import search_materials
@@ -26,5 +26,8 @@ async def nearby_stores(req: LocationRequest):
 def find_materials(req: MaterialsRequest):
     if not req.materials:
         return {"results": []}
-    results = search_materials(req.materials)
-    return {"results": results}
+    try:
+        results = search_materials(req.materials)
+        return {"results": results}
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))

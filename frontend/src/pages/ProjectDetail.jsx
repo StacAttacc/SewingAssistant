@@ -366,7 +366,11 @@ export default function ProjectDetail() {
 
   async function handleDeleteProject() {
     if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
-    await fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
+    const res = await fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      setError('Failed to delete project. Please try again.')
+      return
+    }
     navigate('/projects')
   }
 

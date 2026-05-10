@@ -52,14 +52,20 @@ def pattern_search(req: PatternSearchRequest):
     scraper = SCRAPERS.get(req.source)
     if not scraper:
         raise HTTPException(status_code=400, detail=f"Unknown source '{req.source}'. Valid: {list(SCRAPERS)}")
-    return scraper.search_patterns(req.query)
+    try:
+        return scraper.search_patterns(req.query)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
 
 
 @router.get("/detail", response_model=PatternDetail)
 def pattern_detail(url: str):
     for host, scraper in DETAIL_HOSTS.items():
         if host in url:
-            return scraper.scrape_pattern_detail(url)
+            try:
+                return scraper.scrape_pattern_detail(url)
+            except Exception as exc:
+                raise HTTPException(status_code=502, detail=str(exc))
     raise HTTPException(
         status_code=400,
         detail=f"Unsupported URL. Supported hosts: {list(DETAIL_HOSTS)}",
@@ -69,7 +75,10 @@ def pattern_detail(url: str):
 @router.get("/black-snail/free", response_model=list[PatternSearchResult])
 def black_snail_free():
     """List all free patterns from Black Snail Patterns."""
-    return black_snail_scraper.list_free_patterns()
+    try:
+        return black_snail_scraper.list_free_patterns()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
 
 
 @router.post("/from-url", response_model=PatternDetail)
@@ -81,7 +90,10 @@ def pattern_from_url(req: FromUrlRequest):
     """
     if not req.url.strip():
         raise HTTPException(status_code=400, detail="URL cannot be empty")
-    return _scrape_any_url(req.url)
+    try:
+        return _scrape_any_url(req.url)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
 
 
 @router.post("/materials", response_model=PatternMaterialsResponse)
@@ -92,7 +104,12 @@ def pattern_materials(req: FromUrlRequest):
     """
     if not req.url.strip():
         raise HTTPException(status_code=400, detail="URL cannot be empty")
-    detail = _scrape_any_url(req.url)
-    all_materials = detail.fabric_recommendations + detail.notions
-    purchase_links = search_materials(all_materials) if all_materials else []
-    return PatternMaterialsResponse(pattern=detail, purchase_links=purchase_links)
+    try:
+        detail = _scrape_any_url(req.url)
+        all_materials = detail.fabric_recommendations + detail.notions
+        purchase_links = search_materials(all_materials) if all_materials else []
+        return PatternMaterialsResponse(pattern=detail, purchase_links=purchase_links)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))

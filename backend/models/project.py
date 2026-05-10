@@ -1,34 +1,34 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # --- Request models (what the client sends) ---
 
 
 class ProjectCreate(BaseModel):
-    name: str
-    description: str = ""
+    name: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=2000)
     budget: float | None = None
 
 
 class ChecklistItemCreate(BaseModel):
-    title: str
-    notes: str = ""
+    title: str = Field(min_length=1, max_length=500)
+    notes: str = Field(default="", max_length=2000)
 
 
 class ProjectPatternSave(BaseModel):
     """Save a pattern (from any scraper) to a project."""
 
-    source: str = ""
-    title: str = ""
-    url: str
+    source: str = Field(default="", max_length=100)
+    title: str = Field(default="", max_length=500)
+    url: str = Field(min_length=1)
     image_url: str | None = None
     price: str | None = None
 
 
 class ProjectMaterialCreate(BaseModel):
-    name: str
-    quantity: str = ""
-    notes: str = ""
+    name: str = Field(min_length=1, max_length=200)
+    quantity: str = Field(default="", max_length=100)
+    notes: str = Field(default="", max_length=2000)
     image_url: str | None = None
 
 
@@ -39,10 +39,22 @@ class MeasurementsUpdate(BaseModel):
     bust: float | None = None
 
 
+class SkirtMeasurements(BaseModel):
+    waist: float = 70.0
+    hips: float = 92.0
+
+
+class SkirtStyleParams(BaseModel):
+    length: float = 60.0
+    flare: float = Field(default=0.3, ge=0.0, le=1.0)
+    num_panels: int = Field(default=4, ge=2, le=12)
+    waistband_width: float = Field(default=4.0, gt=0.0)
+
+
 class GeneratePatternRequest(BaseModel):
     garment_type: str  # "skirt" (others later)
-    style_params: dict
-    measurements: dict
+    measurements: SkirtMeasurements = Field(default_factory=SkirtMeasurements)
+    style_params: SkirtStyleParams = Field(default_factory=SkirtStyleParams)
 
 
 # --- Response models (what the API returns) ---

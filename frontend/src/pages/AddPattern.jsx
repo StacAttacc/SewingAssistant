@@ -177,7 +177,7 @@ function ScrapeSection({ projectId, onSave }) {
         )}
 
         {results.map(p => (
-          <div key={p.url} className="card bg-base-100 border border-base-300">
+          <div key={`${p.source}-${p.url}`} className="card bg-base-100 border border-base-300">
             <div className="card-body py-3 flex-row items-center gap-3">
               {p.image_url && (
                 <img src={p.image_url} alt={p.title} className="w-14 h-14 object-cover rounded shrink-0" />

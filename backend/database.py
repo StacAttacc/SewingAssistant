@@ -57,10 +57,10 @@ def init_db():
         # Migrate existing DBs that predate the image_url column
         try:
             conn.execute("ALTER TABLE project_materials ADD COLUMN image_url TEXT")
-        except Exception:
+        except sqlite3.OperationalError:
             pass  # column already exists
         # Migrate existing DBs that predate the measurements column
         try:
             conn.execute("ALTER TABLE projects ADD COLUMN measurements TEXT")
-        except Exception:
+        except sqlite3.OperationalError:
             pass  # column already exists

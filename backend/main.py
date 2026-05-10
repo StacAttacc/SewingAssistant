@@ -62,8 +62,8 @@ if os.path.isdir(static_dir):
         if exc.status_code == 404 and request.method == "GET" and not request.url.path.startswith("/api/"):
             path = request.url.path.lstrip("/")
             if path:
-                candidate = os.path.join(static_dir, path)
-                if os.path.isfile(candidate):
+                candidate = os.path.normpath(os.path.join(static_dir, path))
+                if candidate.startswith(static_dir + os.sep) and os.path.isfile(candidate):
                     return FileResponse(candidate)
             index = os.path.join(static_dir, "index.html")
             if os.path.isfile(index):

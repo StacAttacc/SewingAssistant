@@ -87,11 +87,6 @@ def generate_skirt(measurements: dict, style_params: dict) -> dict:
     # Combined PDF
     pdf_path = _panels_to_pdf(uid, panel_svgs)
 
-    rel = lambda p: "/" + os.path.relpath(p, start=UPLOADS_DIR).replace("\\", "/")
-    uploads_rel = lambda p: (
-        "/uploads/" + os.path.relpath(p, start=UPLOADS_DIR).replace("\\", "/")
-    )
-
     return {
         "pdf_url": "/uploads/" + os.path.relpath(pdf_path, start=UPLOADS_DIR),
         "panel_svgs": [
@@ -353,8 +348,12 @@ def _panels_to_pdf(uid: str, svg_paths: list[str]) -> str:
     for p in svg_paths:
         with open(p) as f:
             content = f.read()
-        w = float(re.search(r'width="([\d.]+)px"', content).group(1))
-        h = float(re.search(r'height="([\d.]+)px"', content).group(1))
+        w_match = re.search(r'width="([\d.]+)', content)
+        h_match = re.search(r'height="([\d.]+)', content)
+        if not w_match or not h_match:
+            raise ValueError(f"Could not parse dimensions from SVG: {p}")
+        w = float(w_match.group(1))
+        h = float(h_match.group(1))
         png_bytes = cairosvg.svg2png(url=p)
         data_uri = "data:image/png;base64," + base64.b64encode(png_bytes).decode()
         panels.append((data_uri, w, h))
@@ -402,4 +401,11 @@ def _panels_to_pdf(uid: str, svg_paths: list[str]) -> str:
 
     pdf_path = os.path.join(GENERATED_DIR, f"{uid}_pattern.pdf")
     cairosvg.svg2pdf(bytestring=composite_svg.encode(), write_to=pdf_path)
+
+    for p in svg_paths:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
     return pdf_path

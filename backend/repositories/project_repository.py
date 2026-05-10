@@ -70,7 +70,7 @@ def toggle_checklist_item(item_id: int, project_id: int) -> dict | None:
             (item_id, project_id),
         )
         row = conn.execute(
-            "SELECT * FROM checklist_items WHERE id = ?", (item_id,)
+            "SELECT * FROM checklist_items WHERE id = ? AND project_id = ?", (item_id, project_id)
         ).fetchone()
     return dict(row) if row else None
 
@@ -149,7 +149,7 @@ def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:
             (material_id, project_id),
         )
         row = conn.execute(
-            "SELECT * FROM project_materials WHERE id = ?", (material_id,)
+            "SELECT * FROM project_materials WHERE id = ? AND project_id = ?", (material_id, project_id)
         ).fetchone()
     return dict(row) if row else None
 
