@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
+import { API } from '../api'
 
 const SOURCES = ['simplicity', 'mood', 'black_snail', 'truly_victorian', 'laughing_moon']
 
@@ -11,14 +12,14 @@ export default function AddPattern() {
   const [activeTab, setActiveTab] = useState('search')
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/projects/${id}`)
+    fetch(`${API}/api/projects/${id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setCrumb(data.name) })
     return () => setCrumb(null)
   }, [id, setCrumb])
 
   async function savePattern(body) {
-    const res = await fetch(`http://localhost:8000/api/projects/${id}/patterns`, {
+    const res = await fetch(`${API}/api/projects/${id}/patterns`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -82,7 +83,7 @@ function ScrapeSection({ projectId, onSave }) {
   async function handleSuggest() {
     setSuggesting(true)
     try {
-      const res = await fetch('http://localhost:8000/api/llm/suggest-patterns', {
+      const res = await fetch(`${API}/api/llm/suggest-patterns`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: Number(projectId) }),
@@ -104,7 +105,7 @@ function ScrapeSection({ projectId, onSave }) {
 
     const responses = await Promise.allSettled(
       SOURCES.map(source =>
-        fetch('http://localhost:8000/api/patterns/search', {
+        fetch(`${API}/api/patterns/search`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: q, source }),
@@ -223,7 +224,7 @@ function UploadSection({ projectId, onDone }) {
       const form = new FormData()
       form.append('file', file)
       form.append('title', title)
-      const res = await fetch(`http://localhost:8000/api/projects/${projectId}/patterns/upload`, {
+      const res = await fetch(`${API}/api/projects/${projectId}/patterns/upload`, {
         method: 'POST',
         body: form,
       })
@@ -350,7 +351,7 @@ function GenerateSection({ projectId, onDone }) {
 
   // Pre-load project measurements
   useEffect(() => {
-    fetch(`http://localhost:8000/api/projects/${projectId}`)
+    fetch(`${API}/api/projects/${projectId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.measurements) {
@@ -369,13 +370,13 @@ function GenerateSection({ projectId, onDone }) {
     setGenerated(null)
     try {
       if (saveMeasurements) {
-        await fetch(`http://localhost:8000/api/projects/${projectId}/measurements`, {
+        await fetch(`${API}/api/projects/${projectId}/measurements`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(measurements),
         })
       }
-      const res = await fetch(`http://localhost:8000/api/projects/${projectId}/patterns/generate`, {
+      const res = await fetch(`${API}/api/projects/${projectId}/patterns/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -510,7 +511,7 @@ function GenerateSection({ projectId, onDone }) {
             </p>
             <div className="flex-1 min-h-0 rounded overflow-hidden border border-base-300">
               <iframe
-                src={`http://localhost:8000${generated.pdf_url}`}
+                src={`${API}${generated.pdf_url}`}
                 className="w-full h-full"
                 title="Generated pattern preview"
               />

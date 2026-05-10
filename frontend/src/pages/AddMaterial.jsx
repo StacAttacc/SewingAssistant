@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
+import { API } from '../api'
 
 const SOURCES = ['fabricville', 'tonitex', 'spool_of_thread', 'fine_fabrics_canada', 'the_fabric_club', 'cleanersupply']
 
@@ -10,14 +11,14 @@ export default function AddMaterial() {
   const { setCrumb } = useBreadcrumb()
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/projects/${id}`)
+    fetch(`${API}/api/projects/${id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setCrumb(data.name) })
     return () => setCrumb(null)
   }, [id, setCrumb])
 
   async function saveMaterial(body) {
-    const res = await fetch(`http://localhost:8000/api/projects/${id}/materials`, {
+    const res = await fetch(`${API}/api/projects/${id}/materials`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -68,7 +69,7 @@ function SearchSection({ projectId, onSave }) {
   async function handleSuggest() {
     setSuggesting(true)
     try {
-      const res = await fetch('http://localhost:8000/api/llm/suggest-materials', {
+      const res = await fetch(`${API}/api/llm/suggest-materials`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: Number(projectId) }),
@@ -90,7 +91,7 @@ function SearchSection({ projectId, onSave }) {
 
     const responses = await Promise.allSettled(
       SOURCES.map(source =>
-        fetch('http://localhost:8000/api/materials/search', {
+        fetch(`${API}/api/materials/search`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: q, source }),

@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { Phone, Globe, Clock } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { API } from '../api'
 
 // Fix Leaflet's missing marker icons when bundled with Vite
 delete L.Icon.Default.prototype._getIconUrl
@@ -48,7 +49,7 @@ export default function Stores() {
       setMapCenter([lat, lon])
 
       // 2. Find nearby stores
-      const storesRes = await fetch('http://localhost:8000/api/stores/nearby', {
+      const storesRes = await fetch(`${API}/api/stores/nearby`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lat, lon, radius_m: 10000 }),

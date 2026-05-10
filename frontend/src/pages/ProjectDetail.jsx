@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
 import { Eye, ExternalLink, Trash2, Package } from 'lucide-react'
+import { API } from '../api'
 
 const PDF_THUMB_SIZE = 48
 const PDF_THUMB_SCALE = PDF_THUMB_SIZE / 816
@@ -9,7 +10,7 @@ const PDF_THUMB_SCALE = PDF_THUMB_SIZE / 816
 function PreviewModal({ pattern, onClose }) {
   const iframeRef = useRef(null)
   const isPDF = pattern.url?.endsWith('.pdf')
-  const src = `http://localhost:8000${pattern.url}`
+  const src = `${API}${pattern.url}`
 
   function handlePrint() {
     window.open(src, '_blank', 'noopener')
@@ -61,7 +62,7 @@ function PatternRow({ pattern, projectId, onDelete }) {
     if (isUpload && !isPDF && pattern.url) {
       return (
         <img
-          src={`http://localhost:8000${pattern.url}`}
+          src={`${API}${pattern.url}`}
           alt=""
           className="w-full h-full object-cover"
         />
@@ -71,7 +72,7 @@ function PatternRow({ pattern, projectId, onDelete }) {
       return (
         <div className="relative w-full h-full overflow-hidden">
           <iframe
-            src={`http://localhost:8000${pattern.url}`}
+            src={`${API}${pattern.url}`}
             style={{
               width: 816,
               height: 816,
@@ -117,7 +118,7 @@ function PatternRow({ pattern, projectId, onDelete }) {
   async function handleDelete() {
     try {
       const res = await fetch(
-        `http://localhost:8000/api/projects/${projectId}/patterns/${pattern.id}`,
+        `${API}/api/projects/${projectId}/patterns/${pattern.id}`,
         { method: 'DELETE' }
       )
       if (!res.ok) throw new Error(`Error ${res.status}`)
@@ -159,7 +160,7 @@ function MaterialRow({ material, projectId, onDelete }) {
   async function handleDelete() {
     try {
       const res = await fetch(
-        `http://localhost:8000/api/projects/${projectId}/materials/${material.id}`,
+        `${API}/api/projects/${projectId}/materials/${material.id}`,
         { method: 'DELETE' }
       )
       if (!res.ok) throw new Error(`Error ${res.status}`)
@@ -207,7 +208,7 @@ function ChecklistSection({ projectId, initialItems }) {
   async function handleToggle(itemId) {
     try {
       const res = await fetch(
-        `http://localhost:8000/api/projects/${projectId}/checklist/${itemId}/toggle`,
+        `${API}/api/projects/${projectId}/checklist/${itemId}/toggle`,
         { method: 'PATCH' }
       )
       if (!res.ok) throw new Error(`Error ${res.status}`)
@@ -221,7 +222,7 @@ function ChecklistSection({ projectId, initialItems }) {
   async function handleDelete(itemId) {
     try {
       const res = await fetch(
-        `http://localhost:8000/api/projects/${projectId}/checklist/${itemId}`,
+        `${API}/api/projects/${projectId}/checklist/${itemId}`,
         { method: 'DELETE' }
       )
       if (!res.ok) throw new Error(`Error ${res.status}`)
@@ -237,7 +238,7 @@ function ChecklistSection({ projectId, initialItems }) {
     setAdding(true)
     try {
       const res = await fetch(
-        `http://localhost:8000/api/projects/${projectId}/checklist`,
+        `${API}/api/projects/${projectId}/checklist`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -245,7 +246,7 @@ function ChecklistSection({ projectId, initialItems }) {
         }
       )
       if (!res.ok) throw new Error(`Error ${res.status}`)
-      const listRes = await fetch(`http://localhost:8000/api/projects/${projectId}/checklist`)
+      const listRes = await fetch(`${API}/api/projects/${projectId}/checklist`)
       if (listRes.ok) setItems(await listRes.json())
       setNewTitle('')
     } catch (err) {
@@ -315,7 +316,7 @@ export default function ProjectDetail() {
 
     async function load() {
       try {
-        const res = await fetch(`http://localhost:8000/api/projects/${id}`)
+        const res = await fetch(`${API}/api/projects/${id}`)
         if (!res.ok) throw new Error(`Error ${res.status}`)
         const data = await res.json()
         if (!cancelled) {
@@ -365,7 +366,7 @@ export default function ProjectDetail() {
 
   async function handleDeleteProject() {
     if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
-    await fetch(`http://localhost:8000/api/projects/${id}`, { method: 'DELETE' })
+    await fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
     navigate('/projects')
   }
 

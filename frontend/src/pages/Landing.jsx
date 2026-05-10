@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FolderOpen, MapPin } from 'lucide-react'
+import { API } from '../api'
 
 export default function Landing() {
   const [recentProject, setRecentProject] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/projects/')
+    fetch(`${API}/api/projects/`)
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (data.length > 0) {

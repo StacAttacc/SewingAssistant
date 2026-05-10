@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { API } from '../api'
 
 export default function Projects() {
   const navigate = useNavigate()
@@ -18,7 +19,7 @@ export default function Projects() {
 
   async function fetchProjects() {
     try {
-      const res = await fetch('http://localhost:8000/api/projects')
+      const res = await fetch(`${API}/api/projects`)
       if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
       setProjects(data)
@@ -45,7 +46,7 @@ export default function Projects() {
     setModalLoading(true)
     setModalError(null)
     try {
-      const res = await fetch('http://localhost:8000/api/projects', {
+      const res = await fetch(`${API}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -41,6 +41,6 @@ app.include_router(materials_router, prefix="/api/materials", tags=["materials"]
 app.include_router(llm_router, prefix="/api/llm", tags=["llm"])
 
 
-@app.get("/")
-def root():
-    return {"status": "ok"}
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
