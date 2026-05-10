@@ -192,6 +192,8 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "pygarment" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
     { name = "uvicorn" },
 ]
 
@@ -209,6 +211,8 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.129.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pygarment", specifier = "==2.0.2" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "uvicorn", specifier = ">=0.41.0" },
 ]
 
