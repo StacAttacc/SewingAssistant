@@ -1,7 +1,8 @@
 import sqlite3
 import os
 
-DB_PATH = os.getenv("DB_PATH", "sewing_assistant.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sewing_assistant.db")
+DB_PATH = DATABASE_URL.removeprefix("sqlite:///") if DATABASE_URL.startswith("sqlite:///") else DATABASE_URL
 
 
 def get_connection() -> sqlite3.Connection:
