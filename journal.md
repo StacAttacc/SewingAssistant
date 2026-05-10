@@ -47,5 +47,5 @@
     Ça fait un moment que je n'ai pas touché au projet et j'ai changé de Windows à Mint, puis à Arch, et enfin à NixOS.
     J'ai aussi changé de VsCode à Neovim, puis à Nixvim avec tout l'écosystème NixOS, et j'ai donc ajouté un Nix Flake au projet.
 
-**9 mai 17h00 10 mai 2:00 ~9h**
-    Déploiment sur tailscale avec Kubernetes, Docker et Git
+**9 mai 17h00 10 mai 3:00 ~10h**
+    Déploiement sur tailscale avec Kubernetes, Docker et Git
