@@ -151,9 +151,12 @@ async def upload_pattern(
         raise HTTPException(
             status_code=400, detail=f"File type not allowed. Allowed: {allowed}"
         )
+    max_bytes = 20 * 1024 * 1024  # 20 MB
+    content = await file.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise HTTPException(status_code=413, detail="File too large (max 20 MB)")
     filename = f"{uuid.uuid4()}{ext}"
     dest = os.path.join(UPLOADS_DIR, filename)
-    content = await file.read()
     with open(dest, "wb") as f:
         f.write(content)
     url = f"/uploads/{filename}"

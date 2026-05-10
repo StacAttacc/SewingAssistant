@@ -5,6 +5,7 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from database import init_db
 from api.patterns import router as patterns_router
@@ -25,12 +26,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Sewing Assistant API", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+_cors_origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+_cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+
+@app.get("/health")
+def health():
+    return JSONResponse({"status": "ok"})
 
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
