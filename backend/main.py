@@ -3,10 +3,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from database import init_db
 from api.patterns import router as patterns_router
 from api.stores import router as stores_router
@@ -56,12 +57,15 @@ if os.path.isdir(static_dir):
     if os.path.isdir(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="vite-assets")
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    async def spa_fallback(full_path: str):
-        candidate = os.path.join(static_dir, full_path)
-        if full_path and os.path.isfile(candidate):
-            return FileResponse(candidate)
-        index = os.path.join(static_dir, "index.html")
-        if os.path.isfile(index):
-            return FileResponse(index)
-        raise HTTPException(status_code=404)
+    @app.exception_handler(StarletteHTTPException)
+    async def spa_handler(request: Request, exc: StarletteHTTPException):
+        if exc.status_code == 404 and request.method == "GET" and not request.url.path.startswith("/api/"):
+            path = request.url.path.lstrip("/")
+            if path:
+                candidate = os.path.join(static_dir, path)
+                if os.path.isfile(candidate):
+                    return FileResponse(candidate)
+            index = os.path.join(static_dir, "index.html")
+            if os.path.isfile(index):
+                return FileResponse(index)
+        return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
