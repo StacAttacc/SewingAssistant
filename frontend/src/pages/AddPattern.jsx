@@ -37,14 +37,14 @@ export default function AddPattern() {
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-semibold">Add Pattern</h1>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/projects/${id}`)}>
-          ← Back to project
+          ← Back
         </button>
       </div>
 
       {/* Tabs */}
       <div role="tablist" className="tabs tabs-border shrink-0">
         <button role="tab" className={`tab ${activeTab === 'search' ? 'tab-active' : ''}`} onClick={() => setActiveTab('search')}>Search</button>
-        <button role="tab" className={`tab ${activeTab === 'manual' ? 'tab-active' : ''}`} onClick={() => setActiveTab('manual')}>Upload & Manual</button>
+        <button role="tab" className={`tab ${activeTab === 'manual' ? 'tab-active' : ''}`} onClick={() => setActiveTab('manual')}>Manual Upload</button>
         <button role="tab" className={`tab ${activeTab === 'generate' ? 'tab-active' : ''}`} onClick={() => setActiveTab('generate')}>Generate</button>
       </div>
 

@@ -16,8 +16,9 @@ from models.project import (
     ProjectMaterialCreate,
     ProjectMaterial,
     ProjectDetail,
-    MeasurementsUpdate,
     GeneratePatternRequest,
+    ProjectMeasurementSetCreate,
+    ProjectMeasurementSet,
 )
 
 router = APIRouter()
@@ -36,18 +37,13 @@ def get_project(project_id: int):
     project = project_service.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    measurements_raw = project.get("measurements")
-    try:
-        measurements = json.loads(measurements_raw) if measurements_raw else None
-    except (json.JSONDecodeError, ValueError):
-        measurements = None
     return ProjectDetail.model_validate(
         {
             **project,
-            "measurements": measurements,
             "patterns": project_service.get_saved_patterns(project_id),
             "materials": project_service.get_materials(project_id),
             "checklist": project_service.get_checklist(project_id),
+            "measurement_sets": project_service.get_measurement_sets(project_id),
         }
     )
 
@@ -63,12 +59,26 @@ def delete_project(project_id: int):
     return {"deleted": project_id}
 
 
-@router.patch("/{project_id}/measurements", response_model=dict)
-def update_measurements(project_id: int, data: MeasurementsUpdate):
+@router.get("/{project_id}/measurement-sets", response_model=list[ProjectMeasurementSet])
+def list_measurement_sets(project_id: int):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
-    project_service.save_measurements(project_id, data.model_dump(exclude_none=True))
-    return {"saved": True}
+    return project_service.get_measurement_sets(project_id)
+
+
+@router.post("/{project_id}/measurement-sets", response_model=ProjectMeasurementSet, status_code=201)
+def create_measurement_set(project_id: int, data: ProjectMeasurementSetCreate):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    measurements = data.measurements.model_dump(exclude_none=True)
+    return project_service.add_measurement_set(project_id, data.name, measurements)
+
+
+@router.delete("/{project_id}/measurement-sets/{ms_id}", status_code=204)
+def delete_measurement_set(project_id: int, ms_id: int):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    project_service.delete_measurement_set(ms_id, project_id)
 
 
 @router.post("/{project_id}/patterns/generate", response_model=list[ProjectPattern])
@@ -78,7 +88,10 @@ def generate_pattern(project_id: int, req: GeneratePatternRequest):
         raise HTTPException(status_code=404, detail="Project not found")
 
     if req.garment_type == "skirt":
-        result = pattern_generator.generate_skirt(req.measurements.model_dump(), req.style_params.model_dump())
+        try:
+            result = pattern_generator.generate_skirt(req.measurements.model_dump(), req.style_params.model_dump())
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc))
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported garment type: {req.garment_type}")
 

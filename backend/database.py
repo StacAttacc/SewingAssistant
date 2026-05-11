@@ -64,3 +64,13 @@ def init_db():
             conn.execute("ALTER TABLE projects ADD COLUMN measurements TEXT")
         except sqlite3.OperationalError:
             pass  # column already exists
+
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS project_measurement_sets (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                name         TEXT NOT NULL,
+                measurements TEXT NOT NULL DEFAULT '{}',
+                created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)

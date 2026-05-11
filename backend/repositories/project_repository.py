@@ -160,3 +160,35 @@ def delete_material(material_id: int, project_id: int) -> None:
             "DELETE FROM project_materials WHERE id = ? AND project_id = ?",
             (material_id, project_id),
         )
+
+
+# --- Measurement sets ---
+
+
+def get_measurement_sets(project_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM project_measurement_sets WHERE project_id = ? ORDER BY created_at",
+            (project_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_measurement_set(project_id: int, name: str, measurements_json: str) -> dict:
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO project_measurement_sets (project_id, name, measurements) VALUES (?, ?, ?)",
+            (project_id, name, measurements_json),
+        )
+        row = conn.execute(
+            "SELECT * FROM project_measurement_sets WHERE id = ?", (cur.lastrowid,)
+        ).fetchone()
+    return dict(row)
+
+
+def delete_measurement_set(ms_id: int, project_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "DELETE FROM project_measurement_sets WHERE id = ? AND project_id = ?",
+            (ms_id, project_id),
+        )

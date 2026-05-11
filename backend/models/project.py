@@ -33,10 +33,44 @@ class ProjectMaterialCreate(BaseModel):
 
 
 class MeasurementsUpdate(BaseModel):
-    waist: float | None = None
-    hips: float | None = None
-    height: float | None = None
-    bust: float | None = None
+    ankle:                float | None = None
+    biceps:               float | None = None
+    bustFront:            float | None = None
+    bustPointToUnderbust: float | None = None
+    bustSpan:             float | None = None
+    chest:                float | None = None
+    crossSeam:            float | None = None
+    crossSeamFront:       float | None = None
+    crotchDepth:          float | None = None
+    head:                 float | None = None
+    heel:                 float | None = None
+    highBust:             float | None = None
+    highBustFront:        float | None = None
+    hips:                 float | None = None
+    hpsToBust:            float | None = None
+    hpsToWaistBack:       float | None = None
+    hpsToWaistFront:      float | None = None
+    inseam:               float | None = None
+    knee:                 float | None = None
+    neck:                 float | None = None
+    seat:                 float | None = None
+    seatBack:             float | None = None
+    shoulderSlope:        float | None = None
+    shoulderToElbow:      float | None = None
+    shoulderToShoulder:   float | None = None
+    shoulderToWrist:      float | None = None
+    underbust:            float | None = None
+    upperLeg:             float | None = None
+    waist:                float | None = None
+    waistBack:            float | None = None
+    waistToArmpit:        float | None = None
+    waistToFloor:         float | None = None
+    waistToHips:          float | None = None
+    waistToKnee:          float | None = None
+    waistToSeat:          float | None = None
+    waistToUnderbust:     float | None = None
+    waistToUpperLeg:      float | None = None
+    wrist:                float | None = None
 
 
 class SkirtMeasurements(BaseModel):
@@ -99,15 +133,26 @@ class ProjectMaterial(BaseModel):
     created_at: str
 
 
-class ProjectDetail(BaseModel):
-    """Full project with all nested data — returned by GET /projects/{id}."""
+class ProjectMeasurementSetCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    measurements: MeasurementsUpdate = Field(default_factory=MeasurementsUpdate)
 
+
+class ProjectMeasurementSet(BaseModel):
+    id: int
+    project_id: int
+    name: str
+    measurements: dict
+    created_at: str
+
+
+class ProjectDetail(BaseModel):
     id: int
     name: str
     description: str
     budget: float | None
-    measurements: dict | None = None
     created_at: str
     patterns: list[ProjectPattern]
     materials: list[ProjectMaterial]
     checklist: list[ChecklistItem]
+    measurement_sets: list[ProjectMeasurementSet]

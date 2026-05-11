@@ -5,6 +5,7 @@ import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
 import AddPattern from './pages/AddPattern'
 import AddMaterial from './pages/AddMaterial'
+import AddMeasurementSet from './pages/AddMeasurementSet'
 import Stores from './pages/Stores'
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="projects/:id" element={<ProjectDetail />} />
           <Route path="projects/:id/patterns/add" element={<AddPattern />} />
           <Route path="projects/:id/materials/add" element={<AddMaterial />} />
+          <Route path="projects/:id/measurements/add" element={<AddMeasurementSet />} />
           <Route path="stores" element={<Stores />} />
         </Route>
       </Routes>

@@ -21,8 +21,31 @@ def delete_project(project_id: int) -> None:
     project_repository.delete_project(project_id)
 
 
-def save_measurements(project_id: int, measurements: dict) -> None:
-    project_repository.save_measurements(project_id, json.dumps(measurements))
+# --- Measurement sets ---
+
+
+def get_measurement_sets(project_id: int) -> list[dict]:
+    rows = project_repository.get_measurement_sets(project_id)
+    for row in rows:
+        raw = row.get("measurements", "{}")
+        try:
+            row["measurements"] = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            row["measurements"] = {}
+    return rows
+
+
+def add_measurement_set(project_id: int, name: str, measurements: dict) -> dict:
+    row = project_repository.add_measurement_set(project_id, name, json.dumps(measurements))
+    try:
+        row["measurements"] = json.loads(row["measurements"])
+    except (json.JSONDecodeError, ValueError):
+        row["measurements"] = {}
+    return row
+
+
+def delete_measurement_set(ms_id: int, project_id: int) -> None:
+    project_repository.delete_measurement_set(ms_id, project_id)
 
 
 # --- Checklist ---

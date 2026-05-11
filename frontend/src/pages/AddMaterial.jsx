@@ -9,6 +9,7 @@ export default function AddMaterial() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { setCrumb } = useBreadcrumb()
+  const [activeTab, setActiveTab] = useState('search')
 
   useEffect(() => {
     fetch(`${API}/api/projects/${id}`)
@@ -32,26 +33,29 @@ export default function AddMaterial() {
 
   return (
     <div className="flex flex-col md:h-full gap-4">
-      {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-semibold">Add Material</h1>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/projects/${id}`)}>
-          ← Back to project
+          ← Back
         </button>
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:min-h-0 md:flex-1">
-        {/* Left: search stores */}
-        <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0">
+      <div role="tablist" className="tabs tabs-border shrink-0">
+        <button role="tab" className={`tab ${activeTab === 'search' ? 'tab-active' : ''}`} onClick={() => setActiveTab('search')}>Search</button>
+        <button role="tab" className={`tab ${activeTab === 'manual' ? 'tab-active' : ''}`} onClick={() => setActiveTab('manual')}>Manual Upload</button>
+      </div>
+
+      {activeTab === 'search' && (
+        <div className="bg-base-200 rounded-xl p-4 flex flex-col md:flex-1 md:min-h-0">
           <SearchSection projectId={id} onSave={saveMaterial} />
         </div>
+      )}
 
-        {/* Right: manual add */}
-        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto">
+      {activeTab === 'manual' && (
+        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto md:flex-1">
           <ManualSection onSave={saveMaterial} onDone={() => navigate(`/projects/${id}`)} />
         </div>
-      </div>
+      )}
     </div>
   )
 }

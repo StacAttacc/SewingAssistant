@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
-import { Eye, ExternalLink, Trash2, Package } from 'lucide-react'
+import { Trash2, Package } from 'lucide-react'
 import { API } from '../api'
+import { MEASUREMENTS } from '../constants/measurements'
 
 const PDF_THUMB_SIZE = 48
 const PDF_THUMB_SCALE = PDF_THUMB_SIZE / 816
@@ -10,11 +11,8 @@ const PDF_THUMB_SCALE = PDF_THUMB_SIZE / 816
 function PreviewModal({ pattern, onClose }) {
   const iframeRef = useRef(null)
   const isPDF = pattern.url?.endsWith('.pdf')
+  const isSVG = pattern.url?.endsWith('.svg')
   const src = `${API}${pattern.url}`
-
-  function handlePrint() {
-    window.open(src, '_blank', 'noopener')
-  }
 
   return (
     <div
@@ -29,24 +27,50 @@ function PreviewModal({ pattern, onClose }) {
         <div className="flex items-center justify-between px-4 py-2 border-b border-base-300">
           <span className="font-medium truncate">{pattern.title ?? pattern.pattern_number ?? 'Pattern'}</span>
           <div className="flex gap-2">
-            <button className="btn btn-sm btn-ghost" onClick={handlePrint}>Print</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => window.open(src, '_blank', 'noopener')}>Print</button>
             <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
           </div>
         </div>
         <div className="flex-1 overflow-hidden flex items-center justify-center p-4">
-          {isPDF ? (
-            <iframe
-              ref={iframeRef}
-              src={src}
-              className="w-full h-full rounded"
-              title="Pattern preview"
-            />
+          {isPDF || isSVG ? (
+            <iframe ref={iframeRef} src={src} className="w-full h-full rounded" title="Pattern preview" />
           ) : (
-            <img
-              src={src}
-              alt={pattern.title ?? 'Pattern'}
-              className="max-w-full max-h-full object-contain rounded"
-            />
+            <img src={src} alt={pattern.title ?? 'Pattern'} className="max-w-full max-h-full object-contain rounded" />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MeasurementSetModal({ ms, onClose }) {
+  const filled = MEASUREMENTS.filter(([key]) => ms.measurements[key] != null)
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-base-100 rounded-xl shadow-2xl flex flex-col"
+        style={{ width: '80vw', maxWidth: 500, maxHeight: '80vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-base-300">
+          <span className="font-semibold truncate">{ms.name}</span>
+          <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+        </div>
+        <div className="overflow-y-auto p-4">
+          {filled.length > 0 ? (
+            <ul className="space-y-2">
+              {filled.map(([key, label]) => (
+                <li key={key} className="flex items-center justify-between text-sm">
+                  <span className="text-base-content/70">{label}</span>
+                  <span className="font-medium ml-4 shrink-0">{ms.measurements[key]} cm</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-base-content/40 text-sm">No measurements recorded.</p>
           )}
         </div>
       </div>
@@ -57,70 +81,38 @@ function PreviewModal({ pattern, onClose }) {
 function PatternRow({ pattern, projectId, onDelete }) {
   const isUpload = pattern.source === 'upload' || pattern.source === 'generated'
   const isPDF = pattern.url?.endsWith('.pdf')
+  const isSVG = pattern.url?.endsWith('.svg')
 
   function renderThumbnail() {
-    if (isUpload && !isPDF && pattern.url) {
-      return (
-        <img
-          src={`${API}${pattern.url}`}
-          alt=""
-          className="w-full h-full object-cover"
-        />
-      )
+    if (isUpload && !isPDF && !isSVG && pattern.url) {
+      return <img src={`${API}${pattern.url}`} alt="" className="w-full h-full object-cover" />
     }
-    if (isUpload && isPDF && pattern.url) {
+    if (isUpload && (isPDF || isSVG) && pattern.url) {
       return (
         <div className="relative w-full h-full overflow-hidden">
           <iframe
             src={`${API}${pattern.url}`}
-            style={{
-              width: 816,
-              height: 816,
-              transform: `scale(${PDF_THUMB_SCALE})`,
-              transformOrigin: 'top left',
-              pointerEvents: 'none',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-            }}
+            style={{ width: 816, height: 816, transform: `scale(${PDF_THUMB_SCALE})`, transformOrigin: 'top left', pointerEvents: 'none', position: 'absolute', top: 0, left: 0 }}
             title=""
           />
         </div>
       )
     }
     if (!isUpload && pattern.image_url) {
-      return (
-        <img
-          src={pattern.image_url}
-          alt=""
-          className="w-full h-full object-cover"
-        />
-      )
+      return <img src={pattern.image_url} alt="" className="w-full h-full object-cover" />
     }
     return (
       <div className="w-full h-full flex items-center justify-center text-base-content/30">
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
         </svg>
       </div>
     )
   }
 
-  function handleAction() {
-    if (isUpload) {
-      onDelete.openPreview(pattern)
-    } else {
-      window.open(pattern.url, '_blank', 'noopener')
-    }
-  }
-
   async function handleDelete() {
     try {
-      const res = await fetch(
-        `${API}/api/projects/${projectId}/patterns/${pattern.id}`,
-        { method: 'DELETE' }
-      )
+      const res = await fetch(`${API}/api/projects/${projectId}/patterns/${pattern.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error(`Error ${res.status}`)
       onDelete.removePattern(pattern.id)
     } catch (err) {
@@ -134,7 +126,7 @@ function PatternRow({ pattern, projectId, onDelete }) {
         {renderThumbnail()}
       </div>
       {isUpload ? (
-        <button className="flex-1 text-sm font-medium truncate min-w-0 text-left hover:underline cursor-pointer" onClick={handleAction}>
+        <button className="flex-1 text-sm font-medium truncate min-w-0 text-left hover:underline cursor-pointer" onClick={() => onDelete.openPreview(pattern)}>
           {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
         </button>
       ) : (
@@ -142,11 +134,7 @@ function PatternRow({ pattern, projectId, onDelete }) {
           {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
         </a>
       )}
-      <button
-        className="btn btn-xs btn-ghost text-error"
-        onClick={handleDelete}
-        title="Delete"
-      >
+      <button className="btn btn-xs btn-ghost text-error" onClick={handleDelete} title="Delete">
         <Trash2 className="w-4 h-4" />
       </button>
     </div>
@@ -159,10 +147,7 @@ function MaterialRow({ material, projectId, onDelete }) {
 
   async function handleDelete() {
     try {
-      const res = await fetch(
-        `${API}/api/projects/${projectId}/materials/${material.id}`,
-        { method: 'DELETE' }
-      )
+      const res = await fetch(`${API}/api/projects/${projectId}/materials/${material.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error(`Error ${res.status}`)
       onDelete(material.id)
     } catch (err) {
@@ -179,21 +164,16 @@ function MaterialRow({ material, projectId, onDelete }) {
         }
       </div>
       <div className="flex-1 min-w-0">
-        {url ? (
-          <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium truncate block hover:underline">{material.name}</a>
-        ) : (
-          <p className="text-sm font-medium truncate">{material.name}</p>
-        )}
+        {url
+          ? <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium truncate block hover:underline">{material.name}</a>
+          : <p className="text-sm font-medium truncate">{material.name}</p>
+        }
         {material.quantity && (
           <p className="text-xs text-base-content/50 truncate">{material.quantity}{material.unit ? ` ${material.unit}` : ''}</p>
         )}
       </div>
       <span className="w-7" />
-      <button
-        className="btn btn-xs btn-ghost text-error"
-        onClick={handleDelete}
-        title="Delete"
-      >
+      <button className="btn btn-xs btn-ghost text-error" onClick={handleDelete} title="Delete">
         <Trash2 className="w-4 h-4" />
       </button>
     </div>
@@ -207,10 +187,7 @@ function ChecklistSection({ projectId, initialItems }) {
 
   async function handleToggle(itemId) {
     try {
-      const res = await fetch(
-        `${API}/api/projects/${projectId}/checklist/${itemId}/toggle`,
-        { method: 'PATCH' }
-      )
+      const res = await fetch(`${API}/api/projects/${projectId}/checklist/${itemId}/toggle`, { method: 'PATCH' })
       if (!res.ok) throw new Error(`Error ${res.status}`)
       const updated = await res.json()
       setItems(prev => prev.map(i => i.id === itemId ? updated : i))
@@ -221,10 +198,7 @@ function ChecklistSection({ projectId, initialItems }) {
 
   async function handleDelete(itemId) {
     try {
-      const res = await fetch(
-        `${API}/api/projects/${projectId}/checklist/${itemId}`,
-        { method: 'DELETE' }
-      )
+      const res = await fetch(`${API}/api/projects/${projectId}/checklist/${itemId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error(`Error ${res.status}`)
       setItems(prev => prev.filter(i => i.id !== itemId))
     } catch (err) {
@@ -237,14 +211,11 @@ function ChecklistSection({ projectId, initialItems }) {
     if (!newTitle.trim()) return
     setAdding(true)
     try {
-      const res = await fetch(
-        `${API}/api/projects/${projectId}/checklist`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: newTitle.trim(), notes: '' }),
-        }
-      )
+      const res = await fetch(`${API}/api/projects/${projectId}/checklist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle.trim(), notes: '' }),
+      })
       if (!res.ok) throw new Error(`Error ${res.status}`)
       const listRes = await fetch(`${API}/api/projects/${projectId}/checklist`)
       if (listRes.ok) setItems(await listRes.json())
@@ -257,8 +228,8 @@ function ChecklistSection({ projectId, initialItems }) {
   }
 
   return (
-    <div className="flex flex-col md:h-full">
-      <form onSubmit={handleAdd} className="flex gap-2 mb-3">
+    <div className="flex flex-col md:flex-1 md:min-h-0">
+      <form onSubmit={handleAdd} className="flex gap-2 mb-3 shrink-0">
         <input
           type="text"
           className="input input-bordered input-sm flex-1"
@@ -284,11 +255,7 @@ function ChecklistSection({ projectId, initialItems }) {
                 <span className={`flex-1 text-sm ${item.checked ? 'line-through text-base-content/40' : ''}`}>
                   {item.title}
                 </span>
-                <button
-                  className="btn btn-xs text-error"
-                  onClick={() => handleDelete(item.id)}
-                  title="Delete"
-                >
+                <button className="btn btn-xs text-error" onClick={() => handleDelete(item.id)} title="Delete">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </li>
@@ -310,6 +277,7 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [previewPattern, setPreviewPattern] = useState(null)
+  const [previewMs, setPreviewMs] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -346,11 +314,7 @@ export default function ProjectDetail() {
   }
 
   if (error) {
-    return (
-      <div className="alert alert-error max-w-lg mx-auto mt-8">
-        <span>{error}</span>
-      </div>
-    )
+    return <div className="alert alert-error max-w-lg mx-auto mt-8"><span>{error}</span></div>
   }
 
   if (!project) return null
@@ -363,6 +327,16 @@ export default function ProjectDetail() {
 
   const removeMaterial = (materialId) =>
     setProject(prev => ({ ...prev, materials: prev.materials.filter(m => m.id !== materialId) }))
+
+  async function removeMeasurementSet(msId) {
+    try {
+      const res = await fetch(`${API}/api/projects/${id}/measurement-sets/${msId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      setProject(prev => ({ ...prev, measurement_sets: prev.measurement_sets.filter(m => m.id !== msId) }))
+    } catch (err) {
+      console.error('Delete failed:', err)
+    }
+  }
 
   async function handleDeleteProject() {
     if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
@@ -379,7 +353,12 @@ export default function ProjectDetail() {
       {previewPattern && (
         <PreviewModal pattern={previewPattern} onClose={() => setPreviewPattern(null)} />
       )}
-      <div className="flex flex-col md:h-full gap-6">
+      {previewMs && (
+        <MeasurementSetModal ms={previewMs} onClose={() => setPreviewMs(null)} />
+      )}
+
+      <div className="flex flex-col md:h-full gap-4">
+
         {/* Header */}
         <div className="shrink-0">
           <div className="flex items-center justify-between mb-2">
@@ -394,33 +373,26 @@ export default function ProjectDetail() {
           {project.description && (
             <p className="text-base-content/70">{project.description}</p>
           )}
-          <div className="flex gap-4 mt-3 text-sm text-base-content/50">
+          <div className="flex gap-4 mt-2 text-sm text-base-content/50">
             {project.budget != null && <span>Budget: ${Number(project.budget).toFixed(2)}</span>}
-            {project.created_at && (
-              <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>
-            )}
+            {project.created_at && <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>}
           </div>
         </div>
 
-        {/* 3-column content */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:flex-1 md:min-h-0">
+        {/* 2×2 grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-4 md:flex-1 md:min-h-0">
 
           {/* Patterns */}
-          <div className="bg-base-200 rounded-xl p-4 flex flex-col">
+          <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 md:overflow-hidden">
             <div className="flex items-center justify-between mb-3 shrink-0">
               <h2 className="text-lg font-medium">Patterns</h2>
               <Link to={`/projects/${id}/patterns/add`} className="btn btn-primary btn-sm">+ Add</Link>
             </div>
-            <div className="md:flex-1 md:min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               {project.patterns?.length > 0 ? (
                 <div className="space-y-1">
                   {project.patterns.map(p => (
-                    <PatternRow
-                      key={p.id}
-                      pattern={p}
-                      projectId={id}
-                      onDelete={patternHandlers}
-                    />
+                    <PatternRow key={p.id} pattern={p} projectId={id} onDelete={patternHandlers} />
                   ))}
                 </div>
               ) : (
@@ -430,21 +402,16 @@ export default function ProjectDetail() {
           </div>
 
           {/* Materials */}
-          <div className="bg-base-200 rounded-xl p-4 flex flex-col">
+          <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 md:overflow-hidden">
             <div className="flex items-center justify-between mb-3 shrink-0">
               <h2 className="text-lg font-medium">Materials</h2>
               <Link to={`/projects/${id}/materials/add`} className="btn btn-primary btn-sm">+ Add</Link>
             </div>
-            <div className="md:flex-1 md:min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               {project.materials?.length > 0 ? (
                 <div className="space-y-1">
                   {project.materials.map(m => (
-                    <MaterialRow
-                      key={m.id}
-                      material={m}
-                      projectId={id}
-                      onDelete={removeMaterial}
-                    />
+                    <MaterialRow key={m.id} material={m} projectId={id} onDelete={removeMaterial} />
                   ))}
                 </div>
               ) : (
@@ -454,11 +421,43 @@ export default function ProjectDetail() {
           </div>
 
           {/* Checklist */}
-          <div className="bg-base-200 rounded-xl p-4 flex flex-col">
+          <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 md:overflow-hidden">
             <div className="flex items-center justify-between mb-3 shrink-0">
               <h2 className="text-lg font-medium">Checklist</h2>
             </div>
             <ChecklistSection projectId={id} initialItems={project.checklist ?? []} />
+          </div>
+
+          {/* Measurements */}
+          <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 md:overflow-hidden">
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <h2 className="text-lg font-medium">Measurements</h2>
+              <Link to={`/projects/${id}/measurements/add`} className="btn btn-primary btn-sm">+ Add</Link>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {project.measurement_sets?.length > 0 ? (
+                <div className="space-y-1">
+                  {project.measurement_sets.map(ms => (
+                    <div
+                      key={ms.id}
+                      className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer"
+                      onClick={() => setPreviewMs(ms)}
+                    >
+                      <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
+                      <button
+                        className="btn btn-xs btn-ghost text-error shrink-0"
+                        onClick={e => { e.stopPropagation(); removeMeasurementSet(ms.id) }}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-base-content/40 text-sm px-2">No measurements added yet.</p>
+              )}
+            </div>
           </div>
 
         </div>
