@@ -160,7 +160,7 @@ function ScrapeSection({ projectId, onSave }) {
         <button type="button" className="btn btn-outline btn-secondary" disabled={suggesting || loading} onClick={handleSuggest}>
           {suggesting ? <span className="loading loading-spinner loading-sm" /> : 'Suggest'}
         </button>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <button type="submit" className="btn btn-primary" disabled={loading || !query.trim()}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Search'}
         </button>
       </form>
@@ -246,20 +246,19 @@ function UploadSection({ projectId, onDone }) {
       {error && <div className="alert alert-error mb-4"><span>{error}</span></div>}
       <form onSubmit={handleUpload} className="flex flex-col gap-4">
         <div className="form-control">
-          <label className="label"><span className="label-text">File (PDF, JPG, PNG, WebP)</span></label>
+          <label className="label"><span className="label-text font-medium">File (PDF, JPG, PNG, WebP)</span></label>
           <input
             type="file"
             accept=".pdf,.jpg,.jpeg,.png,.webp"
             className="file-input file-input-bordered w-full"
             onChange={e => setFile(e.target.files?.[0] ?? null)}
-            required
           />
         </div>
         <div className="form-control">
-          <label className="label"><span className="label-text">Title (optional)</span></label>
+          <label className="label"><span className="label-text font-medium">Title</span></label>
           <input
             type="text"
-            className="input input-bordered"
+            className="input input-bordered w-full"
             placeholder="Leave blank to use filename"
             value={title}
             onChange={e => setTitle(e.target.value)}
@@ -302,36 +301,36 @@ function ManualSection({ onSave, onDone }) {
       {error && <div className="alert alert-error mb-4"><span>{error}</span></div>}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="form-control">
-          <label className="label"><span className="label-text">URL <span className="text-error">*</span></span></label>
+          <label className="label"><span className="label-text font-medium">URL <span className="text-error">*</span></span></label>
           <input
             type="url"
-            className="input input-bordered"
+            className="input input-bordered w-full"
             placeholder="https://…"
             value={url}
             onChange={e => setUrl(e.target.value)}
-            required
           />
         </div>
         <div className="form-control">
-          <label className="label"><span className="label-text">Title</span></label>
+          <label className="label"><span className="label-text font-medium">Title</span></label>
           <input
             type="text"
-            className="input input-bordered"
+            className="input input-bordered w-full"
+            placeholder="Leave blank to auto-detect"
             value={title}
             onChange={e => setTitle(e.target.value)}
           />
         </div>
         <div className="form-control">
-          <label className="label"><span className="label-text">Price</span></label>
+          <label className="label"><span className="label-text font-medium">Price</span></label>
           <input
             type="text"
-            className="input input-bordered"
+            className="input input-bordered w-full"
             placeholder="e.g. $14.99"
             value={price}
             onChange={e => setPrice(e.target.value)}
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <button type="submit" className="btn btn-primary" disabled={loading || !url.trim()}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Add to project'}
         </button>
       </form>

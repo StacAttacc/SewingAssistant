@@ -88,20 +88,20 @@ export default function AddMeasurementSet() {
         {error && <div className="alert alert-error mb-4"><span>{error}</span></div>}
 
         <form onSubmit={handleSave} className="flex flex-col gap-4 md:h-full">
-          <div className="form-control shrink-0">
-            <label className="label">
-              <span className="label-text font-medium">Designation <span className="text-error">*</span></span>
+          <div className="flex items-center gap-3 shrink-0">
+            <label className="flex-1 text-sm text-base-content/70">
+              Designation <span className="text-error">*</span>
             </label>
             <input
               type="text"
-              className={`input input-bordered ${nameError ? 'input-error' : ''}`}
+              className={`input input-bordered input-sm w-48 ${nameError ? 'input-error' : ''}`}
               placeholder="e.g. Ada — main costume"
               value={form.name}
               onChange={e => set('name', e.target.value)}
               onBlur={() => setNameTouched(true)}
             />
-            {nameError && <span className="label-text-alt text-error mt-1">Name is required.</span>}
           </div>
+          {nameError && <p className="text-xs text-error text-right shrink-0 -mt-2">Name is required.</p>}
 
           <div className="divider my-0 shrink-0" />
 
@@ -127,19 +127,17 @@ export default function AddMeasurementSet() {
             <p className="text-sm text-error shrink-0">At least one measurement is required.</p>
           )}
 
-          <div className="flex justify-end pt-2 shrink-0">
-            <button
-              type="submit"
-              className={`btn ${saved ? 'btn-success' : 'btn-primary'} min-w-28`}
-              disabled={saving || !hasMeasurement}
-            >
-              {saving
-                ? <span className="loading loading-spinner loading-sm" />
-                : saved
-                  ? <><Check className="w-4 h-4" /> Saved</>
-                  : 'Save'}
-            </button>
-          </div>
+          <button
+            type="submit"
+            className={`btn ${saved ? 'btn-success' : 'btn-primary'} w-full shrink-0`}
+            disabled={saving || !hasMeasurement}
+          >
+            {saving
+              ? <span className="loading loading-spinner loading-sm" />
+              : saved
+                ? <><Check className="w-4 h-4" /> Saved</>
+                : 'Save'}
+          </button>
         </form>
       </div>
     </div>

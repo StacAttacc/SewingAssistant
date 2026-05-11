@@ -142,7 +142,7 @@ function SearchSection({ projectId, onSave }) {
         <button type="button" className="btn btn-outline btn-secondary" disabled={suggesting || loading} onClick={handleSuggest}>
           {suggesting ? <span className="loading loading-spinner loading-sm" /> : 'Suggest'}
         </button>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <button type="submit" className="btn btn-primary" disabled={loading || !query.trim()}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Search'}
         </button>
       </form>
@@ -213,41 +213,40 @@ function ManualSection({ onSave, onDone }) {
 
   return (
     <section>
-      <h2 className="text-lg font-medium mb-4">Add manually</h2>
       {error && <div className="alert alert-error mb-4"><span>{error}</span></div>}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="form-control">
-          <label className="label"><span className="label-text">Name <span className="text-error">*</span></span></label>
+          <label className="label"><span className="label-text font-medium">Name <span className="text-error">*</span></span></label>
           <input
             type="text"
-            className="input input-bordered"
+            className="input input-bordered w-full"
             placeholder="e.g. Cotton muslin"
             value={name}
             onChange={e => setName(e.target.value)}
-            required
+            autoFocus
           />
         </div>
         <div className="form-control">
-          <label className="label"><span className="label-text">Quantity</span></label>
+          <label className="label"><span className="label-text font-medium">Quantity</span></label>
           <input
             type="text"
-            className="input input-bordered"
+            className="input input-bordered w-full"
             placeholder="e.g. 2.5 yards"
             value={quantity}
             onChange={e => setQuantity(e.target.value)}
           />
         </div>
         <div className="form-control">
-          <label className="label"><span className="label-text">Notes</span></label>
+          <label className="label"><span className="label-text font-medium">Notes</span></label>
           <textarea
-            className="textarea textarea-bordered"
+            className="textarea textarea-bordered w-full"
             rows={3}
             placeholder="Colour, weight, source URL…"
             value={notes}
             onChange={e => setNotes(e.target.value)}
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <button type="submit" className="btn btn-primary" disabled={loading || !name.trim()}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Add to project'}
         </button>
       </form>

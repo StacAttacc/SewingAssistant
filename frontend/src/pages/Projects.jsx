@@ -9,7 +9,6 @@ export default function Projects() {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
 
-  // New project modal form state
   const [modalName, setModalName] = useState('')
   const [modalDesc, setModalDesc] = useState('')
   const [modalBudget, setModalBudget] = useState('')
@@ -72,7 +71,7 @@ export default function Projects() {
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold">Projects</h1>
-        <button className="btn btn-primary btn-sm" onClick={() => dialogRef.current?.showModal()}>
+        <button className="btn btn-primary btn-sm" onClick={() => { setModalName(''); setModalDesc(''); setModalBudget(''); setModalError(null); dialogRef.current?.showModal() }}>
           + New Project
         </button>
       </div>
@@ -132,8 +131,13 @@ export default function Projects() {
 
       {/* New Project modal */}
       <dialog ref={dialogRef} className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg mb-4">New Project</h3>
+        <div className="modal-box max-w-md">
+          <button
+            type="button"
+            className="btn btn-sm btn-circle btn-ghost absolute right-3 top-3"
+            onClick={() => dialogRef.current?.close()}
+          >✕</button>
+          <h3 className="font-bold text-lg mb-5">New Project</h3>
 
           {modalError && (
             <div className="alert alert-error mb-4">
@@ -144,24 +148,27 @@ export default function Projects() {
           <form onSubmit={handleCreate} className="flex flex-col gap-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Project name <span className="text-error">*</span></span>
+                <span className="label-text font-medium">Project name <span className="text-error">*</span></span>
               </label>
               <input
                 type="text"
-                className="input input-bordered"
+                className="input input-bordered w-full"
+                placeholder="e.g. Spring collection 2026"
                 value={modalName}
                 onChange={e => setModalName(e.target.value)}
                 required
+                autoFocus
               />
             </div>
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Description</span>
+                <span className="label-text font-medium">Description</span>
               </label>
               <textarea
-                className="textarea textarea-bordered"
+                className="textarea textarea-bordered w-full"
                 rows={3}
+                placeholder="What are you making?"
                 value={modalDesc}
                 onChange={e => setModalDesc(e.target.value)}
               />
@@ -169,27 +176,24 @@ export default function Projects() {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Budget</span>
+                <span className="label-text font-medium">Budget</span>
               </label>
-              <input
-                type="number"
-                className="input input-bordered"
-                value={modalBudget}
-                onChange={e => setModalBudget(e.target.value)}
-                min="0"
-                step="0.01"
-              />
+              <label className="input input-bordered w-full flex items-center gap-2">
+                <span className="text-base-content/40 text-sm select-none">$</span>
+                <input
+                  type="number"
+                  className="grow"
+                  placeholder="0.00"
+                  value={modalBudget}
+                  onChange={e => setModalBudget(e.target.value)}
+                  min="0"
+                  step="0.01"
+                />
+              </label>
             </div>
 
-            <div className="modal-action mt-0">
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => dialogRef.current?.close()}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={modalLoading}>
+            <div className="mt-2">
+              <button type="submit" className="btn btn-primary w-full" disabled={modalLoading}>
                 {modalLoading ? <span className="loading loading-spinner loading-sm" /> : 'Create'}
               </button>
             </div>
