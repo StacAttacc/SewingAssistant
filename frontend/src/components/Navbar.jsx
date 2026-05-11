@@ -5,6 +5,7 @@ const crumbMap = {
   '/': 'Home',
   '/projects': 'Projects',
   '/stores': 'Stores',
+  '/measurements': 'Measurements',
 }
 
 export default function Navbar({ onToggleSidebar }) {
@@ -14,7 +15,11 @@ export default function Navbar({ onToggleSidebar }) {
   const projectId = projectIdMatch?.[1]
   const isAddPattern = /\/projects\/\d+\/patterns\/add/.test(pathname)
   const isAddMaterial = /\/projects\/\d+\/materials\/add/.test(pathname)
-  const isProjectDetail = !!projectId && !isAddPattern && !isAddMaterial
+  const isAddMeasurements = /\/projects\/\d+\/measurements\/add/.test(pathname)
+  const isEditMeasurements = /\/projects\/\d+\/measurements\/\d+\/edit/.test(pathname)
+  const isGlobalAddMeasurements = pathname === '/measurements/add'
+  const isGlobalEditMeasurements = /^\/measurements\/\d+\/edit$/.test(pathname)
+  const isProjectDetail = !!projectId && !isAddPattern && !isAddMaterial && !isAddMeasurements && !isEditMeasurements
 
   return (
     <nav className="navbar bg-base-100 border-b border-base-300 px-4 gap-4">
@@ -42,6 +47,28 @@ export default function Navbar({ onToggleSidebar }) {
               <li><Link to="/projects">Projects</Link></li>
               {crumb && <li><Link to={`/projects/${projectId}`}>{crumb}</Link></li>}
               <li className="font-medium">Add Material</li>
+            </>
+          ) : isAddMeasurements ? (
+            <>
+              <li><Link to="/projects">Projects</Link></li>
+              {crumb && <li><Link to={`/projects/${projectId}`}>{crumb}</Link></li>}
+              <li className="font-medium">Add Measurements</li>
+            </>
+          ) : isEditMeasurements ? (
+            <>
+              <li><Link to="/projects">Projects</Link></li>
+              {crumb && <li><Link to={`/projects/${projectId}`}>{crumb}</Link></li>}
+              <li className="font-medium">Edit Measurements</li>
+            </>
+          ) : isGlobalAddMeasurements ? (
+            <>
+              <li><Link to="/measurements">Measurements</Link></li>
+              <li className="font-medium">Add</li>
+            </>
+          ) : isGlobalEditMeasurements ? (
+            <>
+              <li><Link to="/measurements">Measurements</Link></li>
+              <li className="font-medium">Edit</li>
             </>
           ) : isProjectDetail ? (
             <>
