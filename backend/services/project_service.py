@@ -44,6 +44,16 @@ def add_measurement_set(project_id: int, name: str, measurements: dict) -> dict:
     return row
 
 
+def update_measurement_set(ms_id: int, project_id: int, name: str, measurements: dict) -> dict | None:
+    row = project_repository.update_measurement_set(ms_id, project_id, name, json.dumps(measurements))
+    if row:
+        try:
+            row["measurements"] = json.loads(row["measurements"])
+        except (json.JSONDecodeError, ValueError):
+            row["measurements"] = {}
+    return row
+
+
 def delete_measurement_set(ms_id: int, project_id: int) -> None:
     project_repository.delete_measurement_set(ms_id, project_id)
 

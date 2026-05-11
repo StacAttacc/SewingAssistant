@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FolderOpen, MapPin } from 'lucide-react'
+import { FolderOpen, MapPin, Ruler } from 'lucide-react'
 import { API } from '../api'
 
 export default function Landing() {
@@ -40,7 +40,14 @@ export default function Landing() {
         <Link to="/projects" className="card bg-base-200 border border-base-300 hover:border-primary transition-colors">
           <div className="card-body py-4 px-5 flex-row items-center gap-3">
             <FolderOpen className="w-5 h-5 text-primary shrink-0" />
-            <span className="font-medium">All projects</span>
+            <span className="font-medium">Your projects</span>
+          </div>
+        </Link>
+
+        <Link to="/measurements" className="card bg-base-200 border border-base-300 hover:border-primary transition-colors">
+          <div className="card-body py-4 px-5 flex-row items-center gap-3">
+            <Ruler className="w-5 h-5 text-primary shrink-0" />
+            <span className="font-medium">Saved measurements</span>
           </div>
         </Link>
 

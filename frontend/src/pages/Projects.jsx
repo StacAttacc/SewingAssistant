@@ -14,6 +14,8 @@ export default function Projects() {
   const [modalBudget, setModalBudget] = useState('')
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState(null)
+  const [globalSets, setGlobalSets] = useState([])
+  const [selectedGlobalSets, setSelectedGlobalSets] = useState(new Set())
   const dialogRef = useRef(null)
 
   async function fetchProjects() {
@@ -52,6 +54,7 @@ export default function Projects() {
           name: modalName,
           description: modalDesc,
           budget: modalBudget !== '' ? parseFloat(modalBudget) : null,
+          global_measurement_set_ids: [...selectedGlobalSets],
         }),
       })
       if (!res.ok) {
@@ -71,7 +74,12 @@ export default function Projects() {
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold">Projects</h1>
-        <button className="btn btn-primary btn-sm" onClick={() => { setModalName(''); setModalDesc(''); setModalBudget(''); setModalError(null); dialogRef.current?.showModal() }}>
+        <button className="btn btn-primary btn-sm" onClick={() => {
+          setModalName(''); setModalDesc(''); setModalBudget(''); setModalError(null)
+          setSelectedGlobalSets(new Set())
+          fetch(`${API}/api/measurements`).then(r => r.ok ? r.json() : []).then(setGlobalSets)
+          dialogRef.current?.showModal()
+        }}>
           + New Project
         </button>
       </div>
@@ -191,6 +199,31 @@ export default function Projects() {
                 />
               </label>
             </div>
+
+            {globalSets.length > 0 && (
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Include your measurements</span>
+                </label>
+                <div className="flex flex-col gap-1 max-h-36 overflow-y-auto">
+                  {globalSets.map(gs => (
+                    <label key={gs.id} className="flex items-center gap-2 cursor-pointer py-1">
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm"
+                        checked={selectedGlobalSets.has(gs.id)}
+                        onChange={e => setSelectedGlobalSets(prev => {
+                          const next = new Set(prev)
+                          e.target.checked ? next.add(gs.id) : next.delete(gs.id)
+                          return next
+                        })}
+                      />
+                      <span className="text-sm">{gs.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-2">
               <button type="submit" className="btn btn-primary w-full" disabled={modalLoading}>

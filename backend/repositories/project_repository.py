@@ -186,6 +186,18 @@ def add_measurement_set(project_id: int, name: str, measurements_json: str) -> d
     return dict(row)
 
 
+def update_measurement_set(ms_id: int, project_id: int, name: str, measurements_json: str) -> dict | None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE project_measurement_sets SET name = ?, measurements = ? WHERE id = ? AND project_id = ?",
+            (name, measurements_json, ms_id, project_id),
+        )
+        row = conn.execute(
+            "SELECT * FROM project_measurement_sets WHERE id = ? AND project_id = ?", (ms_id, project_id)
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def delete_measurement_set(ms_id: int, project_id: int) -> None:
     with get_connection() as conn:
         conn.execute(

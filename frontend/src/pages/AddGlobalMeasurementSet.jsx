@@ -9,8 +9,8 @@ const emptyForm = () => ({
   ...Object.fromEntries(MEASUREMENTS.map(([key]) => [key, ''])),
 })
 
-export default function AddMeasurementSet() {
-  const { id, ms_id } = useParams()
+export default function AddGlobalMeasurementSet() {
+  const { ms_id } = useParams()
   const navigate = useNavigate()
   const isEdit = !!ms_id
   const [form, setForm] = useState(emptyForm())
@@ -22,7 +22,7 @@ export default function AddMeasurementSet() {
 
   useEffect(() => {
     if (!isEdit) return
-    fetch(`${API}/api/projects/${id}/measurement-sets`)
+    fetch(`${API}/api/measurements`)
       .then(r => r.ok ? r.json() : [])
       .then(sets => {
         const ms = sets.find(s => s.id === Number(ms_id))
@@ -35,7 +35,7 @@ export default function AddMeasurementSet() {
           })
         }
       })
-  }, [id, ms_id, isEdit])
+  }, [ms_id, isEdit])
 
   const nameError = nameTouched && !form.name.trim()
   const hasMeasurement = MEASUREMENTS.some(([key]) => form[key] !== '')
@@ -72,9 +72,7 @@ export default function AddMeasurementSet() {
         const v = form[key]
         if (v !== '' && v != null) measurements[key] = parseFloat(v)
       }
-      const url = isEdit
-        ? `${API}/api/projects/${id}/measurement-sets/${ms_id}`
-        : `${API}/api/projects/${id}/measurement-sets`
+      const url = isEdit ? `${API}/api/measurements/${ms_id}` : `${API}/api/measurements`
       const res = await fetch(url, {
         method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,7 +83,7 @@ export default function AddMeasurementSet() {
         throw new Error(data.detail || `Error ${res.status}`)
       }
       if (isEdit) {
-        navigate(`/projects/${id}`)
+        navigate('/measurements')
       } else {
         setForm(emptyForm())
         setNameTouched(false)
@@ -104,7 +102,7 @@ export default function AddMeasurementSet() {
     <div className="flex flex-col md:h-full gap-4">
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-semibold">{isEdit ? 'Edit Measurements' : 'Add Measurements'}</h1>
-        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/projects/${id}`)}>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/measurements')}>
           ← Back
         </button>
       </div>
@@ -120,7 +118,7 @@ export default function AddMeasurementSet() {
             <input
               type="text"
               className={`input input-bordered input-sm w-48 ${nameError ? 'input-error' : ''}`}
-              placeholder="e.g. Ada — main costume"
+              placeholder="e.g. My measurements"
               value={form.name}
               onChange={e => set('name', e.target.value)}
               onBlur={() => setNameTouched(true)}

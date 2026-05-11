@@ -73,4 +73,17 @@ def init_db():
                 measurements TEXT NOT NULL DEFAULT '{}',
                 created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS global_measurement_sets (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                name         TEXT NOT NULL,
+                measurements TEXT NOT NULL DEFAULT '{}',
+                created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS project_global_measurements (
+                project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                global_ms_id INTEGER NOT NULL REFERENCES global_measurement_sets(id) ON DELETE CASCADE,
+                PRIMARY KEY (project_id, global_ms_id)
+            );
         """)

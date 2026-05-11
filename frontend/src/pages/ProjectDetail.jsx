@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
-import { Trash2, Package } from 'lucide-react'
+import { Trash2, Package, Pencil } from 'lucide-react'
 import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
 
@@ -44,6 +44,7 @@ function PreviewModal({ pattern, onClose }) {
 }
 
 function MeasurementSetModal({ ms, onClose }) {
+  const navigate = useNavigate()
   const filled = MEASUREMENTS.filter(([key]) => ms.measurements[key] != null)
   return (
     <div
@@ -57,7 +58,16 @@ function MeasurementSetModal({ ms, onClose }) {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-base-300">
           <span className="font-semibold truncate">{ms.name}</span>
-          <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+          <div className="flex gap-1 shrink-0">
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => { onClose(); navigate(ms.editUrl) }}
+              title="Edit"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+          </div>
         </div>
         <div className="overflow-y-auto p-4">
           {filled.length > 0 ? (
@@ -338,6 +348,16 @@ export default function ProjectDetail() {
     }
   }
 
+  async function removeGlobalMeasurementSet(globalMsId) {
+    try {
+      const res = await fetch(`${API}/api/projects/${id}/global-measurement-sets/${globalMsId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      setProject(prev => ({ ...prev, global_measurement_sets: prev.global_measurement_sets.filter(m => m.id !== globalMsId) }))
+    } catch (err) {
+      console.error('Unlink failed:', err)
+    }
+  }
+
   async function handleDeleteProject() {
     if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
     const res = await fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
@@ -435,15 +455,46 @@ export default function ProjectDetail() {
               <Link to={`/projects/${id}/measurements/add`} className="btn btn-primary btn-sm">+ Add</Link>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto">
-              {project.measurement_sets?.length > 0 ? (
+              {(project.global_measurement_sets?.length > 0 || project.measurement_sets?.length > 0) ? (
                 <div className="space-y-1">
-                  {project.measurement_sets.map(ms => (
+                  {project.global_measurement_sets?.map(ms => (
+                    <div
+                      key={`g-${ms.id}`}
+                      className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer"
+                      onClick={() => setPreviewMs({ ...ms, editUrl: `/measurements/${ms.id}/edit` })}
+                    >
+                      <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
+                      <span className="badge badge-ghost badge-xs shrink-0">Shared</span>
+                      <button
+                        className="btn btn-xs btn-ghost shrink-0"
+                        onClick={e => { e.stopPropagation(); navigate(`/measurements/${ms.id}/edit`) }}
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="btn btn-xs btn-ghost text-error shrink-0"
+                        onClick={e => { e.stopPropagation(); removeGlobalMeasurementSet(ms.id) }}
+                        title="Remove from project"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {project.measurement_sets?.map(ms => (
                     <div
                       key={ms.id}
                       className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer"
-                      onClick={() => setPreviewMs(ms)}
+                      onClick={() => setPreviewMs({ ...ms, editUrl: `/projects/${id}/measurements/${ms.id}/edit` })}
                     >
                       <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
+                      <button
+                        className="btn btn-xs btn-ghost shrink-0"
+                        onClick={e => { e.stopPropagation(); navigate(`/projects/${id}/measurements/${ms.id}/edit`) }}
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         className="btn btn-xs btn-ghost text-error shrink-0"
                         onClick={e => { e.stopPropagation(); removeMeasurementSet(ms.id) }}

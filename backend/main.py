@@ -14,6 +14,7 @@ from api.stores import router as stores_router
 from api.projects import router as projects_router
 from api.materials import router as materials_router
 from api.llm import router as llm_router
+from api.measurements import router as measurements_router
 
 UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -49,6 +50,7 @@ app.include_router(stores_router, prefix="/api/stores", tags=["stores"])
 app.include_router(projects_router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials_router, prefix="/api/materials", tags=["materials"])
 app.include_router(llm_router, prefix="/api/llm", tags=["llm"])
+app.include_router(measurements_router, prefix="/api/measurements", tags=["measurements"])
 
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")

@@ -8,6 +8,7 @@ class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
     budget: float | None = None
+    global_measurement_set_ids: list[int] = []
 
 
 class ChecklistItemCreate(BaseModel):
@@ -146,6 +147,13 @@ class ProjectMeasurementSet(BaseModel):
     created_at: str
 
 
+class GlobalMeasurementSet(BaseModel):
+    id: int
+    name: str
+    measurements: dict
+    created_at: str
+
+
 class ProjectDetail(BaseModel):
     id: int
     name: str
@@ -156,3 +164,4 @@ class ProjectDetail(BaseModel):
     materials: list[ProjectMaterial]
     checklist: list[ChecklistItem]
     measurement_sets: list[ProjectMeasurementSet]
+    global_measurement_sets: list[GlobalMeasurementSet] = []

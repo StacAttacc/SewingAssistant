@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from services import project_service
+from services import project_service, measurements_service
 from services import pattern_generator
 
 UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
@@ -44,19 +44,30 @@ def get_project(project_id: int):
             "materials": project_service.get_materials(project_id),
             "checklist": project_service.get_checklist(project_id),
             "measurement_sets": project_service.get_measurement_sets(project_id),
+            "global_measurement_sets": measurements_service.get_for_project(project_id),
         }
     )
 
 
 @router.post("/", response_model=dict)
 def create_project(data: ProjectCreate):
-    return project_service.create_project(data.name, data.description, data.budget)
+    created = project_service.create_project(data.name, data.description, data.budget)
+    if data.global_measurement_set_ids:
+        measurements_service.link_to_project(created["id"], data.global_measurement_set_ids)
+    return created
 
 
 @router.delete("/{project_id}")
 def delete_project(project_id: int):
     project_service.delete_project(project_id)
     return {"deleted": project_id}
+
+
+@router.delete("/{project_id}/global-measurement-sets/{global_ms_id}", status_code=204)
+def unlink_global_measurement_set(project_id: int, global_ms_id: int):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    measurements_service.unlink_from_project(project_id, global_ms_id)
 
 
 @router.get("/{project_id}/measurement-sets", response_model=list[ProjectMeasurementSet])
@@ -72,6 +83,17 @@ def create_measurement_set(project_id: int, data: ProjectMeasurementSetCreate):
         raise HTTPException(status_code=404, detail="Project not found")
     measurements = data.measurements.model_dump(exclude_none=True)
     return project_service.add_measurement_set(project_id, data.name, measurements)
+
+
+@router.patch("/{project_id}/measurement-sets/{ms_id}", response_model=ProjectMeasurementSet)
+def update_measurement_set(project_id: int, ms_id: int, data: ProjectMeasurementSetCreate):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    measurements = data.measurements.model_dump(exclude_none=True)
+    result = project_service.update_measurement_set(ms_id, project_id, data.name, measurements)
+    if not result:
+        raise HTTPException(status_code=404, detail="Measurement set not found")
+    return result
 
 
 @router.delete("/{project_id}/measurement-sets/{ms_id}", status_code=204)
