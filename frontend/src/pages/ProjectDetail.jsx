@@ -285,7 +285,7 @@ function ChecklistSection({ projectId, initialItems }) {
                   {item.title}
                 </span>
                 <button
-                  className="btn btn-xs btn-ghost text-error opacity-0 group-hover:opacity-100"
+                  className="btn btn-xs text-error"
                   onClick={() => handleDelete(item.id)}
                   title="Delete"
                 >
