@@ -13,17 +13,39 @@ export default function AddMeasurementSet() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm())
+  const [nameTouched, setNameTouched] = useState(false)
+  const [invalidFields, setInvalidFields] = useState(new Set())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
+
+  const nameError = nameTouched && !form.name.trim()
+  const hasMeasurement = MEASUREMENTS.some(([key]) => form[key] !== '')
 
   function set(field, value) {
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
+  function handleMeasurementChange(key, value) {
+    if (value !== '' && (isNaN(value) || Number(value) < 0)) return
+    set(key, value)
+    setInvalidFields(prev => {
+      const next = new Set(prev)
+      next.delete(key)
+      return next
+    })
+  }
+
+  function handleMeasurementBlur(key, value) {
+    if (value !== '' && (isNaN(value) || Number(value) < 0)) {
+      setInvalidFields(prev => new Set([...prev, key]))
+    }
+  }
+
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.name.trim()) return
+    setNameTouched(true)
+    if (!form.name.trim() || !hasMeasurement || invalidFields.size > 0) return
     setSaving(true)
     setError(null)
     try {
@@ -42,6 +64,8 @@ export default function AddMeasurementSet() {
         throw new Error(data.detail || `Error ${res.status}`)
       }
       setForm(emptyForm())
+      setNameTouched(false)
+      setInvalidFields(new Set())
       setSaved(true)
       setTimeout(() => setSaved(false), 6000)
     } catch (err) {
@@ -65,15 +89,18 @@ export default function AddMeasurementSet() {
 
         <form onSubmit={handleSave} className="flex flex-col gap-4 md:h-full">
           <div className="form-control shrink-0">
-            <label className="label"><span className="label-text font-medium">Designation <span className="text-error">*</span></span></label>
+            <label className="label">
+              <span className="label-text font-medium">Designation <span className="text-error">*</span></span>
+            </label>
             <input
               type="text"
-              className="input input-bordered"
+              className={`input input-bordered ${nameError ? 'input-error' : ''}`}
               placeholder="e.g. Ada — main costume"
               value={form.name}
               onChange={e => set('name', e.target.value)}
-              required
+              onBlur={() => setNameTouched(true)}
             />
+            {nameError && <span className="label-text-alt text-error mt-1">Name is required.</span>}
           </div>
 
           <div className="divider my-0 shrink-0" />
@@ -86,20 +113,25 @@ export default function AddMeasurementSet() {
                   type="number"
                   step="0.1"
                   min="0"
-                  className="input input-bordered input-sm w-24 text-right"
+                  className={`input input-bordered input-sm w-24 text-right ${invalidFields.has(key) ? 'input-error' : ''}`}
                   placeholder="cm"
                   value={form[key]}
-                  onChange={e => set(key, e.target.value)}
+                  onChange={e => handleMeasurementChange(key, e.target.value)}
+                  onBlur={e => handleMeasurementBlur(key, e.target.value)}
                 />
               </div>
             ))}
           </div>
 
+          {!hasMeasurement && (
+            <p className="text-sm text-error shrink-0">At least one measurement is required.</p>
+          )}
+
           <div className="flex justify-end pt-2 shrink-0">
             <button
               type="submit"
               className={`btn ${saved ? 'btn-success' : 'btn-primary'} min-w-28`}
-              disabled={saving || !form.name.trim()}
+              disabled={saving || !hasMeasurement}
             >
               {saving
                 ? <span className="loading loading-spinner loading-sm" />
