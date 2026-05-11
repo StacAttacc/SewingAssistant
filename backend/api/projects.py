@@ -8,6 +8,7 @@ from services import pattern_generator
 UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
 from models.project import (
     ProjectCreate,
+    ProjectUpdate,
     Project,
     ChecklistItemCreate,
     ChecklistItem,
@@ -55,6 +56,14 @@ def create_project(data: ProjectCreate):
     if data.global_measurement_set_ids:
         measurements_service.link_to_project(created["id"], data.global_measurement_set_ids)
     return created
+
+
+@router.patch("/{project_id}", response_model=Project)
+def update_project(project_id: int, data: ProjectUpdate):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    result = project_service.update_project(project_id, data.name, data.description, data.budget)
+    return result
 
 
 @router.delete("/{project_id}")

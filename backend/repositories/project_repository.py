@@ -29,6 +29,16 @@ def create_project(name: str, description: str, budget: float | None) -> dict:
     return {"id": cur.lastrowid, "name": name}
 
 
+def update_project(project_id: int, name: str, description: str, budget: float | None) -> dict | None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE projects SET name = ?, description = ?, budget = ? WHERE id = ?",
+            (name, description, budget, project_id),
+        )
+        row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+    return dict(row) if row else None
+
+
 def delete_project(project_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))

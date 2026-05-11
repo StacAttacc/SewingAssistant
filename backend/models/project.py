@@ -11,6 +11,12 @@ class ProjectCreate(BaseModel):
     global_measurement_set_ids: list[int] = []
 
 
+class ProjectUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=2000)
+    budget: float | None = None
+
+
 class ChecklistItemCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     notes: str = Field(default="", max_length=2000)

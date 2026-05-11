@@ -4,6 +4,7 @@ import { useBreadcrumb } from '../contexts/BreadcrumbContext'
 import { Trash2, Package, Pencil } from 'lucide-react'
 import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
+import ProjectFormModal from '../components/ProjectFormModal'
 
 const PDF_THUMB_SIZE = 48
 const PDF_THUMB_SCALE = PDF_THUMB_SIZE / 816
@@ -288,6 +289,12 @@ export default function ProjectDetail() {
   const [error, setError] = useState(null)
   const [previewPattern, setPreviewPattern] = useState(null)
   const [previewMs, setPreviewMs] = useState(null)
+  const editDialogRef = useRef(null)
+  const [editName, setEditName] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editBudget, setEditBudget] = useState('')
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -358,6 +365,43 @@ export default function ProjectDetail() {
     }
   }
 
+  function openEdit() {
+    setEditName(project.name)
+    setEditDesc(project.description)
+    setEditBudget(project.budget != null ? String(project.budget) : '')
+    setEditError(null)
+    editDialogRef.current?.showModal()
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault()
+    setEditLoading(true)
+    setEditError(null)
+    try {
+      const res = await fetch(`${API}/api/projects/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName,
+          description: editDesc,
+          budget: editBudget !== '' ? parseFloat(editBudget) : null,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.detail || `Error ${res.status}`)
+      }
+      const updated = await res.json()
+      setProject(prev => ({ ...prev, name: updated.name, description: updated.description, budget: updated.budget }))
+      setCrumb(updated.name)
+      editDialogRef.current?.close()
+    } catch (err) {
+      setEditError(err.message)
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
   async function handleDeleteProject() {
     if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
     const res = await fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
@@ -376,6 +420,16 @@ export default function ProjectDetail() {
       {previewMs && (
         <MeasurementSetModal ms={previewMs} onClose={() => setPreviewMs(null)} />
       )}
+      <ProjectFormModal
+        dialogRef={editDialogRef}
+        mode="edit"
+        name={editName} setName={setEditName}
+        desc={editDesc} setDesc={setEditDesc}
+        budget={editBudget} setBudget={setEditBudget}
+        loading={editLoading}
+        error={editError}
+        onSubmit={handleUpdate}
+      />
 
       <div className="flex flex-col md:h-full gap-4">
 
@@ -384,10 +438,13 @@ export default function ProjectDetail() {
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-semibold">{project.name}</h1>
             <div className="flex gap-2">
+              <button className="btn btn-ghost btn-sm" onClick={openEdit}>
+                <Pencil className="w-4 h-4" /> Edit project
+              </button>
               <button className="btn btn-ghost btn-sm text-error" onClick={handleDeleteProject}>
                 <Trash2 className="w-4 h-4" /> Delete project
               </button>
-              <Link to="/projects" className="btn btn-ghost btn-sm">← Projects</Link>
+              <Link to="/projects" className="btn btn-ghost btn-sm">← Back</Link>
             </div>
           </div>
           {project.description && (
