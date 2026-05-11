@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
-import { Phone, Globe, Clock } from 'lucide-react'
+import { Phone, Globe, Clock, MapPin } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -38,7 +38,6 @@ export default function Stores() {
     setError(null)
 
     try {
-      // 1. Geocode city → lat/lon via Nominatim
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,
         { headers: { 'Accept-Language': 'en' } }
@@ -50,7 +49,6 @@ export default function Stores() {
       const lon = parseFloat(geoData[0].lon)
       setMapCenter([lat, lon])
 
-      // 2. Find nearby stores
       const storesRes = await fetch(`${API}/api/stores/nearby`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,12 +67,10 @@ export default function Stores() {
 
   return (
     <div className="flex flex-col md:h-full gap-4">
-      {/* Header */}
-      <div className="shrink-0">
-        <h1 className="text-2xl font-semibold">Nearby Stores</h1>
+      <div className="flex items-center justify-between shrink-0">
+        <h1 className="text-2xl font-semibold">Find Fabric Stores</h1>
       </div>
 
-      {/* Search bar */}
       <form onSubmit={handleSearch} className="flex gap-2 shrink-0">
         <input
           type="text"
@@ -83,20 +79,17 @@ export default function Stores() {
           value={city}
           onChange={e => setCity(e.target.value)}
         />
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <button type="submit" className="btn btn-primary" disabled={loading || !city.trim()}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Search'}
         </button>
       </form>
 
-      {error && (
-        <div className="alert alert-error shrink-0"><span>{error}</span></div>
-      )}
+      {error && <div className="alert alert-error shrink-0"><span>{error}</span></div>}
 
-      {/* Content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:flex-1 md:min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:flex-1 md:min-h-0">
 
-        {/* Store list */}
-        <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0">
+        {/* Store list — second on mobile, first on desktop */}
+        <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 order-2 md:order-1">
           <p className="text-sm text-base-content/50 mb-3 shrink-0">
             {!searched
               ? 'Search a city to find nearby fabric & sewing stores.'
@@ -104,48 +97,60 @@ export default function Stores() {
                 ? `${stores.length} store${stores.length !== 1 ? 's' : ''} found within 10 km`
                 : 'No stores found in this area.'}
           </p>
-          <div className="md:flex-1 md:min-h-0 overflow-y-auto space-y-2">
+          <div className="md:flex-1 md:min-h-0 overflow-y-auto space-y-2 pr-1">
             {stores.map((store, i) => (
-              <div key={i} className="bg-base-100 rounded-lg p-3 space-y-1">
-                <p className="font-medium">{store.name}</p>
-                {store.address && store.address !== 'Address not available' && (
-                  <p className="text-sm text-base-content/60">{store.address}</p>
-                )}
-                {store.opening_hours && (
-                  <p className="text-xs text-base-content/50 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {store.opening_hours}
-                  </p>
-                )}
-                <div className="flex gap-3 mt-1">
-                  {store.phone && (
-                    <a href={`tel:${store.phone}`} className="text-xs text-primary flex items-center gap-1 hover:underline">
-                      <Phone className="w-3 h-3" /> {store.phone}
-                    </a>
-                  )}
-                  {store.website && (
-                    <a href={store.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
-                      <Globe className="w-3 h-3" /> Website
-                    </a>
-                  )}
+              <div key={i} className="bg-base-100 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium leading-snug">{store.name}</p>
+                    {store.address && store.address !== 'Address not available' && (
+                      <p className="text-sm text-base-content/60 mt-0.5">{store.address}</p>
+                    )}
+                    {store.opening_hours && (
+                      <div className="text-xs text-base-content/50 flex items-start gap-1 mt-1">
+                        <Clock className="w-3 h-3 shrink-0 mt-0.5" />
+                        <div>
+                          {store.opening_hours.split(';').map(s => s.trim()).filter(Boolean).map((line, j) => (
+                            <div key={j}>{line}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(store.phone || store.website) && (
+                      <div className="flex gap-3 mt-2">
+                        {store.phone && (
+                          <a href={`tel:${store.phone}`} className="text-xs text-primary flex items-center gap-1 hover:underline">
+                            <Phone className="w-3 h-3" /> {store.phone}
+                          </a>
+                        )}
+                        {store.website && (
+                          <a href={store.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                            <Globe className="w-3 h-3" /> Website
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Map */}
-        <div className="bg-base-200 rounded-xl p-4">
+        {/* Map — first on mobile, second on desktop */}
+        <div className="rounded-xl overflow-hidden h-72 md:h-auto order-1 md:order-2">
           <MapContainer
             center={MONTREAL}
             zoom={12}
-            className="w-full h-64 md:h-full rounded-lg"
+            className="w-full h-full"
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             />
             <MapRecenter center={mapCenter} />
-            {stores.map((store, i) => (
+            {stores.map((store, i) =>
               store.lat && store.lon
                 ? <Marker key={i} position={[store.lat, store.lon]}>
                     <Popup>
@@ -156,7 +161,7 @@ export default function Stores() {
                     </Popup>
                   </Marker>
                 : null
-            ))}
+            )}
           </MapContainer>
         </div>
 
