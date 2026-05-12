@@ -98,13 +98,6 @@ export default function MyMeasurements() {
                   onClick={() => setPreviewMs(ms)}
                 >
                   <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
-                  <button
-                    className="btn btn-xs btn-ghost shrink-0"
-                    onClick={e => { e.stopPropagation(); navigate(`/measurements/${ms.id}/edit`) }}
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
                   <DeleteButton className="shrink-0" onConfirm={() => handleDelete(ms.id)} />
                 </div>
               ))}

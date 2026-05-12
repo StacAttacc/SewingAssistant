@@ -142,6 +142,10 @@ def save_pattern(
     )
 
 
+def update_pattern(pattern_id: int, project_id: int, title: str, notes: str | None) -> dict | None:
+    return project_repository.update_pattern(pattern_id, project_id, title, notes)
+
+
 def delete_saved_pattern(pattern_id: int, project_id: int) -> None:
     project_repository.delete_saved_pattern(pattern_id, project_id)
 

@@ -32,6 +32,11 @@ class ChecklistReorder(BaseModel):
     ids: list[int]
 
 
+class ProjectPatternUpdate(BaseModel):
+    title: str = Field(default="", max_length=500)
+    notes: str | None = None
+
+
 class ProjectPatternSave(BaseModel):
     """Save a pattern (from any scraper) to a project."""
 

@@ -17,6 +17,7 @@ from models.project import (
     ChecklistReorder,
     ChecklistItem,
     ProjectPatternSave,
+    ProjectPatternUpdate,
     ProjectPattern,
     ProjectMaterialCreate,
     ProjectMaterialUpdate,
@@ -234,6 +235,14 @@ def save_pattern(project_id: int, data: ProjectPatternSave):
     return project_service.save_pattern(
         project_id, data.source, data.title, data.url, data.image_url, data.price, data.notes
     )
+
+
+@router.patch("/{project_id}/patterns/{pattern_id}", response_model=ProjectPattern)
+def update_pattern(project_id: int, pattern_id: int, data: ProjectPatternUpdate):
+    result = project_service.update_pattern(pattern_id, project_id, data.title, data.notes)
+    if not result:
+        raise HTTPException(status_code=404, detail="Pattern not found")
+    return result
 
 
 @router.delete("/{project_id}/patterns/{pattern_id}")

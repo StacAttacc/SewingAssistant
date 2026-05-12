@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
-import { Trash2, Package, Pencil, GripVertical } from 'lucide-react'
+import { Trash2, Package, Pencil, GripVertical, Eye } from 'lucide-react'
 import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
 import ProjectFormModal from '../components/ProjectFormModal'
@@ -98,6 +98,107 @@ function MeasurementSetModal({ ms, onClose }) {
   )
 }
 
+function PatternModal({ pattern, projectId, onSaved, onClose }) {
+  const [uiMode, setUiMode] = useState('view')
+  const [title, setTitle] = useState(pattern.title ?? '')
+  const [notes, setNotes] = useState(pattern.notes ?? '')
+  const [loading, setLoading] = useState(false)
+
+  const isUpload = pattern.source === 'upload' || pattern.source === 'generated'
+  const isManual = pattern.source === 'manual'
+  const sourceLabel = isUpload ? 'Upload' : isManual ? 'Manual link' : pattern.source?.replace(/_/g, ' ')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch(`${API}/api/projects/${projectId}/patterns/${pattern.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim() || pattern.title, notes: notes || null }),
+      })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      onSaved(await res.json())
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div
+        className="relative bg-base-100 rounded-xl shadow-2xl w-full max-w-sm mx-4 flex flex-col max-h-[90vh]"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-base-300 shrink-0">
+          <span className="font-semibold">{uiMode === 'view' ? 'Pattern' : 'Edit pattern'}</span>
+          <div className="flex gap-1 shrink-0">
+            {uiMode === 'view' && (
+              <button className="btn btn-sm btn-ghost" onClick={() => setUiMode('edit')} title="Edit">
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
+            <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4 overflow-y-auto">
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Title</span></label>
+            {uiMode === 'view'
+              ? <p className="text-sm px-1">{pattern.title || '—'}</p>
+              : <input type="text" className="input input-bordered input-sm w-full" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
+            }
+          </div>
+
+          {(pattern.source || sourceLabel) && (
+            <div className="form-control">
+              <label className="label py-1"><span className="label-text font-medium">Source</span></label>
+              <p className="text-sm px-1 capitalize">{sourceLabel || '—'}</p>
+            </div>
+          )}
+
+          {pattern.price && (
+            <div className="form-control">
+              <label className="label py-1"><span className="label-text font-medium">Price</span></label>
+              <p className="text-sm px-1">{pattern.price}</p>
+            </div>
+          )}
+
+          {pattern.url && (
+            <div className="form-control">
+              <label className="label py-1"><span className="label-text font-medium">Link</span></label>
+              <a href={isUpload ? `${API}${pattern.url}` : pattern.url} target="_blank" rel="noreferrer"
+                className="text-sm px-1 truncate hover:underline text-primary">
+                {isUpload ? 'View file' : pattern.url}
+              </a>
+            </div>
+          )}
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Notes</span></label>
+            {uiMode === 'view'
+              ? <p className="text-sm px-1 whitespace-pre-wrap">{pattern.notes || <span className="text-base-content/40">No notes.</span>}</p>
+              : <textarea className="textarea textarea-bordered textarea-sm w-full" rows={4}
+                  placeholder="Size range, modifications, difficulty…"
+                  value={notes} onChange={e => setNotes(e.target.value)} />
+            }
+          </div>
+
+          {uiMode === 'edit' && (
+            <div className="flex flex-col gap-2 mt-1">
+              <button type="button" className="btn btn-ghost btn-sm w-full" onClick={() => setUiMode('view')}>Cancel</button>
+              <button type="submit" className="btn btn-primary btn-sm w-full" disabled={loading}>
+                {loading ? <span className="loading loading-spinner loading-xs" /> : 'Save'}
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function ImageViewerModal({ images, startIndex = 0, onClose }) {
   const [idx, setIdx] = useState(startIndex)
   const total = images.length
@@ -136,7 +237,8 @@ function ImageViewerModal({ images, startIndex = 0, onClose }) {
   )
 }
 
-function PatternRow({ pattern, projectId, onDelete }) {
+function PatternRow({ pattern, projectId, onDelete, onSaved }) {
+  const [viewing, setViewing] = useState(false)
   const isUpload = pattern.source === 'upload' || pattern.source === 'generated'
   const isPDF = pattern.url?.endsWith('.pdf')
   const isSVG = pattern.url?.endsWith('.svg')
@@ -179,21 +281,29 @@ function PatternRow({ pattern, projectId, onDelete }) {
   }
 
   return (
-    <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
-      <div className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300">
-        {renderThumbnail()}
-      </div>
-      {isUpload ? (
-        <button className="flex-1 text-sm font-medium truncate min-w-0 text-left hover:underline cursor-pointer" onClick={() => onDelete.openPreview(pattern)}>
-          {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
-        </button>
-      ) : (
-        <a href={pattern.url} target="_blank" rel="noreferrer" className="flex-1 text-sm font-medium truncate min-w-0 hover:underline">
-          {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
-        </a>
+    <>
+      {viewing && (
+        <PatternModal
+          pattern={pattern}
+          projectId={projectId}
+          onSaved={updated => { onSaved(updated); setViewing(false) }}
+          onClose={() => setViewing(false)}
+        />
       )}
-      <DeleteButton onConfirm={handleDelete} />
-    </div>
+      <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
+        <div
+          className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300 cursor-pointer"
+          onClick={() => isUpload ? onDelete.openPreview(pattern) : setViewing(true)}
+        >
+          {renderThumbnail()}
+        </div>
+        <span className="flex-1 text-sm font-medium truncate min-w-0">{pattern.title ?? pattern.pattern_number ?? 'Untitled'}</span>
+        <button className="btn btn-xs btn-ghost shrink-0" onClick={() => setViewing(true)} title="View">
+          <Eye className="w-4 h-4" />
+        </button>
+        <DeleteButton onConfirm={handleDelete} />
+      </div>
+    </>
   )
 }
 
@@ -272,6 +382,7 @@ function EditMaterialModal({ material, projectId, onSaved, onClose }) {
   const urlMatch = material.notes?.match(/https?:\/\/[^\s]+/)
   const isScraped = !!urlMatch?.[0]
   const isPurchased = !!material.purchased
+  const [uiMode, setUiMode] = useState('view')
 
   const [name, setName] = useState(material.name)
   const [quantity, setQuantity] = useState(material.quantity ?? '')
@@ -332,102 +443,141 @@ function EditMaterialModal({ material, projectId, onSaved, onClose }) {
     }
   }
 
+  const isView = uiMode === 'view'
+
+  const grainLabel = { straight: 'Straight grain', bias: 'Bias cut', cross: 'Cross grain' }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div className="bg-base-100 rounded-xl shadow-2xl w-full max-w-sm mx-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-base-300 shrink-0">
-          <span className="font-semibold">Edit material</span>
-          <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+          <span className="font-semibold">{isView ? 'Material' : 'Edit material'}</span>
+          <div className="flex gap-1 shrink-0">
+            {isView && (
+              <button className="btn btn-sm btn-ghost" onClick={() => setUiMode('edit')} title="Edit">
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
+            <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4 overflow-y-auto">
+          {isScraped && urlMatch?.[0] && (
+            <div className="form-control">
+              <label className="label py-1"><span className="label-text font-medium">Source</span></label>
+              <a href={urlMatch[0]} target="_blank" rel="noreferrer" className="text-sm px-1 truncate hover:underline text-primary">{material.name}</a>
+            </div>
+          )}
+
           {!isScraped && (
             <div className="form-control">
-              <label className="label py-1"><span className="label-text font-medium">Name <span className="text-error">*</span></span></label>
-              <input type="text" className="input input-bordered input-sm w-full" value={name} onChange={e => setName(e.target.value)} required autoFocus />
+              <label className="label py-1"><span className="label-text font-medium">Name</span></label>
+              {isView
+                ? <p className="text-sm px-1">{name || '—'}</p>
+                : <input type="text" className="input input-bordered input-sm w-full" value={name} onChange={e => setName(e.target.value)} required autoFocus />
+              }
             </div>
           )}
 
           <div className="form-control">
             <label className="label py-1"><span className="label-text font-medium">Quantity</span></label>
-            <input type="text" className="input input-bordered input-sm w-full" placeholder="e.g. 2.5 yards" value={quantity} onChange={e => setQuantity(e.target.value)} autoFocus={isScraped} />
+            {isView
+              ? <p className="text-sm px-1">{quantity || '—'}</p>
+              : <input type="text" className="input input-bordered input-sm w-full" placeholder="e.g. 2.5 yards" value={quantity} onChange={e => setQuantity(e.target.value)} autoFocus={isScraped} />
+            }
           </div>
 
           <div className="form-control">
             <label className="label py-1"><span className="label-text font-medium">{isPurchased ? 'Price paid' : 'Price'}</span></label>
-            <label className="input input-bordered input-sm w-full flex items-center gap-2">
-              <span className="text-base-content/40 text-sm select-none">$</span>
-              <input type="number" className="grow" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} min="0" step="0.01" />
-            </label>
+            {isView
+              ? <p className="text-sm px-1">{price ? `$${Number(price).toFixed(2)}` : '—'}</p>
+              : (
+                <label className="input input-bordered input-sm w-full flex items-center gap-2">
+                  <span className="text-base-content/40 text-sm select-none">$</span>
+                  <input type="number" className="grow" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} min="0" step="0.01" />
+                </label>
+              )
+            }
           </div>
 
           {!isScraped && (
             <>
               <div className="form-control">
                 <label className="label py-1"><span className="label-text font-medium">Image</span></label>
-                {imagePreview ? (
-                  <div className="flex items-center gap-3">
-                    <img src={imagePreview} alt="preview" className="w-16 h-16 object-cover rounded" />
-                    <div className="flex flex-col gap-1">
-                      <label className="btn btn-ghost btn-xs cursor-pointer">
-                        Change
-                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageChange} />
-                      </label>
-                      <button type="button" className="btn btn-ghost btn-xs" onClick={clearImage}>Remove</button>
+                {isView
+                  ? imagePreview
+                    ? <img src={imagePreview} alt="" className="w-16 h-16 object-cover rounded" />
+                    : <p className="text-sm px-1 text-base-content/40">No image.</p>
+                  : imagePreview ? (
+                    <div className="flex items-center gap-3">
+                      <img src={imagePreview} alt="preview" className="w-16 h-16 object-cover rounded" />
+                      <div className="flex flex-col gap-1">
+                        <label className="btn btn-ghost btn-xs cursor-pointer">
+                          Change
+                          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageChange} />
+                        </label>
+                        <button type="button" className="btn btn-ghost btn-xs" onClick={clearImage}>Remove</button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <input type="file" accept="image/jpeg,image/png,image/webp" className="file-input file-input-bordered file-input-sm w-full" onChange={handleImageChange} />
-                )}
+                  ) : (
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="file-input file-input-bordered file-input-sm w-full" onChange={handleImageChange} />
+                  )
+                }
               </div>
               <div className="form-control">
                 <label className="label py-1"><span className="label-text font-medium">Notes</span></label>
-                <textarea className="textarea textarea-bordered textarea-sm w-full" rows={3} placeholder="Colour, weight…" value={notes} onChange={e => setNotes(e.target.value)} />
+                {isView
+                  ? <p className="text-sm px-1 whitespace-pre-wrap">{notes || <span className="text-base-content/40">—</span>}</p>
+                  : <textarea className="textarea textarea-bordered textarea-sm w-full" rows={3} placeholder="Colour, weight…" value={notes} onChange={e => setNotes(e.target.value)} />
+                }
               </div>
             </>
           )}
 
           <div className="form-control">
             <label className="label py-1"><span className="label-text font-medium">Care instructions</span></label>
-            <input
-              type="text"
-              className="input input-bordered input-sm w-full"
-              placeholder="e.g. Machine wash cold, lay flat to dry"
-              value={careInstructions}
-              onChange={e => setCareInstructions(e.target.value)}
-            />
+            {isView
+              ? <p className="text-sm px-1">{careInstructions || <span className="text-base-content/40">—</span>}</p>
+              : <input type="text" className="input input-bordered input-sm w-full" placeholder="e.g. Machine wash cold" value={careInstructions} onChange={e => setCareInstructions(e.target.value)} />
+            }
           </div>
 
           <div className="form-control">
             <label className="label py-1"><span className="label-text font-medium">Grain direction</span></label>
-            <select
-              className="select select-bordered select-sm w-full"
-              value={grainDirection}
-              onChange={e => setGrainDirection(e.target.value)}
-            >
-              <option value="">— not specified —</option>
-              <option value="straight">Straight grain</option>
-              <option value="bias">Bias cut</option>
-              <option value="cross">Cross grain</option>
-            </select>
+            {isView
+              ? <p className="text-sm px-1">{grainLabel[grainDirection] || <span className="text-base-content/40">Not specified</span>}</p>
+              : (
+                <select className="select select-bordered select-sm w-full" value={grainDirection} onChange={e => setGrainDirection(e.target.value)}>
+                  <option value="">— not specified —</option>
+                  <option value="straight">Straight grain</option>
+                  <option value="bias">Bias cut</option>
+                  <option value="cross">Cross grain</option>
+                </select>
+              )
+            }
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer py-1">
-            <input
-              type="checkbox"
-              className="checkbox checkbox-sm"
-              checked={!!preWash}
-              onChange={e => setPreWash(e.target.checked ? 1 : 0)}
-            />
-            <span className="label-text">Pre-washed</span>
-          </label>
-
-          <div className="flex flex-col gap-2 mt-1">
-            <button type="button" className="btn btn-ghost btn-sm w-full" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary btn-sm w-full" disabled={loading || (!isScraped && !name.trim())}>
-              {loading ? <span className="loading loading-spinner loading-xs" /> : 'Save'}
-            </button>
+          <div className="flex items-center gap-2 py-1">
+            {isView
+              ? <><span className="text-sm">{preWash ? '✓' : '✗'}</span><span className="label-text">Pre-washed</span></>
+              : (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="checkbox checkbox-sm" checked={!!preWash} onChange={e => setPreWash(e.target.checked ? 1 : 0)} />
+                  <span className="label-text">Pre-washed</span>
+                </label>
+              )
+            }
           </div>
+
+          {!isView && (
+            <div className="flex flex-col gap-2 mt-1">
+              <button type="button" className="btn btn-ghost btn-sm w-full" onClick={() => setUiMode('view')}>Cancel</button>
+              <button type="submit" className="btn btn-primary btn-sm w-full" disabled={loading || (!isScraped && !name.trim())}>
+                {loading ? <span className="loading loading-spinner loading-xs" /> : 'Save'}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
@@ -435,7 +585,7 @@ function EditMaterialModal({ material, projectId, onSaved, onClose }) {
 }
 
 function ChecklistItemModal({ item, projectId, mode: initialMode, onSaved, onClose }) {
-  const [uiMode, setUiMode] = useState(initialMode)
+  const [uiMode, setUiMode] = useState(initialMode)  // 'view' | 'complete' | 'edit'
   const [title, setTitle] = useState(item.title)
   const [notes, setNotes] = useState(item.notes ?? '')
   const [existingUrls, setExistingUrls] = useState(item.image_urls ?? [])
@@ -508,9 +658,11 @@ function ChecklistItemModal({ item, projectId, mode: initialMode, onSaved, onClo
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-base-300 shrink-0">
-          <span className="font-semibold">{uiMode === 'complete' ? 'Complete step' : 'Edit step'}</span>
+          <span className="font-semibold">
+            {uiMode === 'view' ? 'Step' : uiMode === 'complete' ? 'Complete step' : 'Edit step'}
+          </span>
           <div className="flex gap-1 shrink-0">
-            {uiMode === 'complete' && (
+            {(uiMode === 'view' || uiMode === 'complete') && (
               <button className="btn btn-sm btn-ghost" onClick={() => setUiMode('edit')} title="Edit">
                 <Pencil className="w-4 h-4" />
               </button>
@@ -520,69 +672,73 @@ function ChecklistItemModal({ item, projectId, mode: initialMode, onSaved, onClo
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4 overflow-y-auto">
-          {uiMode === 'edit' ? (
-            <div className="form-control">
-              <label className="label py-1"><span className="label-text font-medium">Title</span></label>
-              <input
-                type="text"
-                className="input input-bordered input-sm w-full"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                autoFocus
-              />
-            </div>
-          ) : (
-            <p className="text-sm font-medium">{item.title}</p>
-          )}
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Title</span></label>
+            {uiMode === 'edit'
+              ? <input type="text" className="input input-bordered input-sm w-full" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
+              : <p className="text-sm font-medium px-1">{item.title}</p>
+            }
+          </div>
 
           <div className="form-control">
             <label className="label py-1"><span className="label-text font-medium">Photos</span></label>
-            {allImages.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {allImages.map(({ src, onRemove }, i) => (
-                  <div key={i} className="relative w-16 h-16 shrink-0">
-                    <img src={src} alt="" className="w-full h-full object-cover rounded" />
-                    <button
-                      type="button"
-                      className="absolute -top-1 -right-1 bg-base-100 rounded-full w-4 h-4 flex items-center justify-center text-xs shadow leading-none"
-                      onClick={onRemove}
-                    >×</button>
+            {uiMode === 'view' ? (
+              existingUrls.length > 0
+                ? <div className="flex flex-wrap gap-2">
+                    {existingUrls.map((url, i) => (
+                      <img key={i} src={resolveUrl(url)} alt="" className="w-16 h-16 object-cover rounded" />
+                    ))}
                   </div>
-                ))}
-              </div>
+                : <p className="text-sm px-1 text-base-content/40">No photos.</p>
+            ) : (
+              <>
+                {allImages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {allImages.map(({ src, onRemove }, i) => (
+                      <div key={i} className="relative w-16 h-16 shrink-0">
+                        <img src={src} alt="" className="w-full h-full object-cover rounded" />
+                        <button
+                          type="button"
+                          className="absolute -top-1 -right-1 bg-base-100 rounded-full w-4 h-4 flex items-center justify-center text-xs shadow leading-none"
+                          onClick={onRemove}
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className="btn btn-ghost btn-sm w-full border border-dashed border-base-300 cursor-pointer">
+                  + Add photo
+                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleFileChange} />
+                </label>
+              </>
             )}
-            <label className="btn btn-ghost btn-sm w-full border border-dashed border-base-300 cursor-pointer">
-              + Add photo
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </label>
           </div>
 
           <div className="form-control">
             <label className="label py-1"><span className="label-text font-medium">Notes</span></label>
-            <textarea
-              className="textarea textarea-bordered textarea-sm w-full"
-              rows={3}
-              placeholder="How did it go?"
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              autoFocus={uiMode === 'complete'}
-            />
+            {uiMode === 'view'
+              ? <p className="text-sm px-1 whitespace-pre-wrap">{notes || <span className="text-base-content/40">No notes.</span>}</p>
+              : <textarea
+                  className="textarea textarea-bordered textarea-sm w-full"
+                  rows={3}
+                  placeholder="How did it go?"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  autoFocus={uiMode === 'complete'}
+                />
+            }
           </div>
 
-          <div className="flex flex-col gap-2 mt-1">
-            <button type="button" className="btn btn-ghost btn-sm w-full" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary btn-sm w-full" disabled={loading}>
-              {loading
-                ? <span className="loading loading-spinner loading-xs" />
-                : uiMode === 'complete' ? 'Mark done' : 'Save'}
-            </button>
-          </div>
+          {uiMode !== 'view' && (
+            <div className="flex flex-col gap-2 mt-1">
+              <button type="button" className="btn btn-ghost btn-sm w-full" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-primary btn-sm w-full" disabled={loading}>
+                {loading
+                  ? <span className="loading loading-spinner loading-xs" />
+                  : uiMode === 'complete' ? 'Mark done' : 'Save'}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
@@ -639,8 +795,8 @@ function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
       {material.price != null && (
         <span className="text-xs text-base-content/60 shrink-0">${Number(material.price).toFixed(2)}</span>
       )}
-      <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(material)} title="Edit">
-        <Pencil className="w-4 h-4" />
+      <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(material)} title="View">
+        <Eye className="w-4 h-4" />
       </button>
       <DeleteButton onConfirm={handleDelete} />
     </div>
@@ -693,8 +849,8 @@ function SortableChecklistItem({ item, onCheckChange, onEdit, onDelete }) {
         <span className={`flex-1 text-sm min-w-0 truncate ${item.checked ? 'line-through text-base-content/40' : ''}`}>
           {item.title}
         </span>
-        <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(item)} title="Edit">
-          <Pencil className="w-4 h-4" />
+        <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(item)} title="View">
+          <Eye className="w-4 h-4" />
         </button>
         <DeleteButton onConfirm={() => onDelete(item.id)} />
       </li>
@@ -782,7 +938,7 @@ function ChecklistSection({ projectId, initialItems }) {
         <ChecklistItemModal
           item={activeModal}
           projectId={projectId}
-          mode={completingItem ? 'complete' : 'edit'}
+          mode={completingItem ? 'complete' : 'view'}
           onSaved={handleSaved}
           onClose={() => { setCompletingItem(null); setEditingItem(null) }}
         />
@@ -817,7 +973,7 @@ function ChecklistSection({ projectId, initialItems }) {
                       item={item}
                       projectId={projectId}
                       onCheckChange={handleCheckChange}
-                      onEdit={setEditingItem}
+                      onEdit={item => { setEditingItem(item) }}
                       onDelete={handleDelete}
                     />
                   ))}
@@ -895,6 +1051,8 @@ export default function ProjectDetail() {
     openPreview: setPreviewPattern,
     removePattern: (patternId) =>
       setProject(prev => ({ ...prev, patterns: prev.patterns.filter(p => p.id !== patternId) })),
+    updatePattern: (updated) =>
+      setProject(prev => ({ ...prev, patterns: prev.patterns.map(p => p.id === updated.id ? updated : p) })),
   }
 
   const removeMaterial = (materialId) =>
@@ -1124,7 +1282,7 @@ export default function ProjectDetail() {
               {project.patterns?.length > 0 ? (
                 <div className="space-y-1">
                   {project.patterns.map(p => (
-                    <PatternRow key={p.id} pattern={p} projectId={id} onDelete={patternHandlers} />
+                    <PatternRow key={p.id} pattern={p} projectId={id} onDelete={patternHandlers} onSaved={patternHandlers.updatePattern} />
                   ))}
                 </div>
               ) : (
@@ -1189,13 +1347,6 @@ export default function ProjectDetail() {
                     >
                       <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
                       <span className="badge badge-ghost badge-xs shrink-0">Shared</span>
-                      <button
-                        className="btn btn-xs btn-ghost shrink-0"
-                        onClick={e => { e.stopPropagation(); navigate(`/measurements/${ms.id}/edit`) }}
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
                       <DeleteButton className="shrink-0" onConfirm={() => removeGlobalMeasurementSet(ms.id)} />
                     </div>
                   ))}

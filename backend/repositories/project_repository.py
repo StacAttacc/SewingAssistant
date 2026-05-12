@@ -186,6 +186,18 @@ def save_pattern(
     return {"id": cur.lastrowid, "url": url}
 
 
+def update_pattern(pattern_id: int, project_id: int, title: str, notes: str | None) -> dict | None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE saved_patterns SET title=?, notes=? WHERE id=? AND project_id=?",
+            (title, notes, pattern_id, project_id),
+        )
+        row = conn.execute(
+            "SELECT * FROM saved_patterns WHERE id=? AND project_id=?", (pattern_id, project_id)
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def delete_saved_pattern(pattern_id: int, project_id: int) -> None:
     with get_connection() as conn:
         conn.execute(
