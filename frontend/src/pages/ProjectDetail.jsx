@@ -5,6 +5,7 @@ import { Trash2, Package, Pencil } from 'lucide-react'
 import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
 import ProjectFormModal from '../components/ProjectFormModal'
+import DeleteButton from '../components/DeleteButton'
 
 function resolveUrl(url) {
   if (!url) return null
@@ -150,9 +151,7 @@ function PatternRow({ pattern, projectId, onDelete }) {
           {pattern.title ?? pattern.pattern_number ?? 'Untitled'}
         </a>
       )}
-      <button className="btn btn-xs btn-ghost text-error" onClick={handleDelete} title="Delete">
-        <Trash2 className="w-4 h-4" />
-      </button>
+      <DeleteButton onConfirm={handleDelete} />
     </div>
   )
 }
@@ -264,9 +263,7 @@ function MaterialRow({ material, projectId, onDelete, onToggle }) {
       {material.price != null && (
         <span className="text-xs text-base-content/60 shrink-0">${Number(material.price).toFixed(2)}</span>
       )}
-      <button className="btn btn-xs btn-ghost text-error" onClick={handleDelete} title="Delete">
-        <Trash2 className="w-4 h-4" />
-      </button>
+      <DeleteButton onConfirm={handleDelete} />
     </div>
   )
 }
@@ -346,9 +343,7 @@ function ChecklistSection({ projectId, initialItems }) {
                 <span className={`flex-1 text-sm ${item.checked ? 'line-through text-base-content/40' : ''}`}>
                   {item.title}
                 </span>
-                <button className="btn btn-xs text-error" onClick={() => handleDelete(item.id)} title="Delete">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <DeleteButton onConfirm={() => handleDelete(item.id)} />
               </li>
             ))}
           </ul>
@@ -540,7 +535,6 @@ export default function ProjectDetail() {
   }
 
   async function handleDeleteProject() {
-    if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
     const res = await fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
     if (!res.ok) {
       setError('Failed to delete project. Please try again.')
@@ -585,9 +579,9 @@ export default function ProjectDetail() {
               <button className="btn btn-ghost btn-sm" onClick={openEdit}>
                 <Pencil className="w-4 h-4" /> Edit project
               </button>
-              <button className="btn btn-ghost btn-sm text-error" onClick={handleDeleteProject}>
+              <DeleteButton size="btn-sm" onConfirm={handleDeleteProject}>
                 <Trash2 className="w-4 h-4" /> Delete project
-              </button>
+              </DeleteButton>
               <Link to="/projects" className="btn btn-ghost btn-sm">← Back</Link>
             </div>
           </div>
@@ -713,13 +707,7 @@ export default function ProjectDetail() {
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button
-                        className="btn btn-xs btn-ghost text-error shrink-0"
-                        onClick={e => { e.stopPropagation(); removeGlobalMeasurementSet(ms.id) }}
-                        title="Remove from project"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <DeleteButton className="shrink-0" onConfirm={() => removeGlobalMeasurementSet(ms.id)} />
                     </div>
                   ))}
                   {project.measurement_sets?.map(ms => (
@@ -736,13 +724,7 @@ export default function ProjectDetail() {
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button
-                        className="btn btn-xs btn-ghost text-error shrink-0"
-                        onClick={e => { e.stopPropagation(); removeMeasurementSet(ms.id) }}
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <DeleteButton className="shrink-0" onConfirm={() => removeMeasurementSet(ms.id)} />
                     </div>
                   ))}
                 </div>

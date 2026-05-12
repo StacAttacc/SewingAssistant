@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, Pencil } from 'lucide-react'
+import { Pencil } from 'lucide-react'
+import DeleteButton from '../components/DeleteButton'
 import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
 
@@ -104,13 +105,7 @@ export default function MyMeasurements() {
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
-                  <button
-                    className="btn btn-xs btn-ghost text-error shrink-0"
-                    onClick={e => { e.stopPropagation(); handleDelete(ms.id) }}
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <DeleteButton className="shrink-0" onConfirm={() => handleDelete(ms.id)} />
                 </div>
               ))}
             </div>
