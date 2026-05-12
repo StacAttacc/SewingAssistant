@@ -37,6 +37,13 @@ class ProjectMaterialCreate(BaseModel):
     quantity: str = Field(default="", max_length=100)
     notes: str = Field(default="", max_length=2000)
     image_url: str | None = None
+    price: float | None = None
+
+
+class ProjectMaterialUpdate(BaseModel):
+    purchased: int
+    price: float | None = None
+    quantity: str | None = None
 
 
 class MeasurementsUpdate(BaseModel):
@@ -141,6 +148,7 @@ class ProjectMaterial(BaseModel):
     quantity: str
     notes: str
     purchased: int  # 0 or 1
+    price: float | None = None
     image_url: str | None = None
     created_at: str
 

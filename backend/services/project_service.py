@@ -117,9 +117,13 @@ def get_materials(project_id: int) -> list[dict]:
 
 
 def add_material(
-    project_id: int, name: str, quantity: str, notes: str, image_url: str | None = None
+    project_id: int, name: str, quantity: str, notes: str, image_url: str | None = None, price: float | None = None
 ) -> dict:
-    return project_repository.add_material(project_id, name, quantity, notes, image_url)
+    return project_repository.add_material(project_id, name, quantity, notes, image_url, price)
+
+
+def update_material(material_id: int, project_id: int, purchased: int, price: float | None, quantity: str | None) -> dict | None:
+    return project_repository.update_material(material_id, project_id, purchased, price, quantity)
 
 
 def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:

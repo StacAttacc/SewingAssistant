@@ -6,6 +6,11 @@ import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
 import ProjectFormModal from '../components/ProjectFormModal'
 
+function resolveUrl(url) {
+  if (!url) return null
+  return url.startsWith('/') ? `${API}${url}` : url
+}
+
 const PDF_THUMB_SIZE = 48
 const PDF_THUMB_SCALE = PDF_THUMB_SIZE / 816
 
@@ -152,9 +157,76 @@ function PatternRow({ pattern, projectId, onDelete }) {
   )
 }
 
-function MaterialRow({ material, projectId, onDelete }) {
+function PurchaseModal({ material, onConfirm, onClose }) {
+  const [qty, setQty] = useState(material.quantity ?? '')
+  const [price, setPrice] = useState(material.price != null ? String(material.price) : '')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    onConfirm({ price: parseFloat(price), quantity: qty })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="bg-base-100 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-5" onClick={e => e.stopPropagation()}>
+        <h3 className="font-bold text-lg mb-4">Mark as Purchased</h3>
+
+        <div className="flex items-start gap-3 mb-5">
+          <div className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300 shrink-0">
+            {material.image_url
+              ? <img src={resolveUrl(material.image_url)} alt="" className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-base-content/30"><Package className="w-5 h-5" /></div>
+            }
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-sm truncate">{material.name}</p>
+            {material.notes && <p className="text-xs text-base-content/50 mt-0.5 line-clamp-2">{material.notes}</p>}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Quantity <span className="text-error">*</span></span></label>
+            <input
+              type="text"
+              className="input input-bordered input-sm w-full"
+              placeholder="e.g. 2.5 yards"
+              value={qty}
+              onChange={e => setQty(e.target.value)}
+              required
+              autoFocus
+            />
+          </div>
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Price paid <span className="text-error">*</span></span></label>
+            <label className="input input-bordered input-sm w-full flex items-center gap-2">
+              <span className="text-base-content/40 text-sm select-none">$</span>
+              <input
+                type="number"
+                className="grow"
+                placeholder="0.00"
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                min="0"
+                step="0.01"
+                required
+              />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2 mt-1">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={!qty.trim() || !price}>Confirm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function MaterialRow({ material, projectId, onDelete, onToggle }) {
   const urlMatch = material.notes?.match(/https?:\/\/[^\s]+/)
   const url = urlMatch?.[0]
+  const isPurchased = !!material.purchased
 
   async function handleDelete() {
     try {
@@ -167,23 +239,31 @@ function MaterialRow({ material, projectId, onDelete }) {
   }
 
   return (
-    <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
+    <div className={`flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors ${isPurchased ? 'opacity-60' : ''}`}>
+      <input
+        type="checkbox"
+        className="checkbox checkbox-sm shrink-0"
+        checked={isPurchased}
+        onChange={() => onToggle(material, isPurchased ? 0 : 1)}
+      />
       <div className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300">
         {material.image_url
-          ? <img src={material.image_url} alt="" className="w-full h-full object-cover" />
+          ? <img src={resolveUrl(material.image_url)} alt="" className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center text-base-content/30"><Package className="w-5 h-5" /></div>
         }
       </div>
       <div className="flex-1 min-w-0">
         {url
-          ? <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium truncate block hover:underline">{material.name}</a>
-          : <p className="text-sm font-medium truncate">{material.name}</p>
+          ? <a href={url} target="_blank" rel="noreferrer" className={`text-sm font-medium truncate block hover:underline ${isPurchased ? 'line-through' : ''}`}>{material.name}</a>
+          : <p className={`text-sm font-medium truncate ${isPurchased ? 'line-through' : ''}`}>{material.name}</p>
         }
         {material.quantity && (
-          <p className="text-xs text-base-content/50 truncate">{material.quantity}{material.unit ? ` ${material.unit}` : ''}</p>
+          <p className="text-xs text-base-content/50 truncate">{material.quantity}</p>
         )}
       </div>
-      <span className="w-7" />
+      {material.price != null && (
+        <span className="text-xs text-base-content/60 shrink-0">${Number(material.price).toFixed(2)}</span>
+      )}
       <button className="btn btn-xs btn-ghost text-error" onClick={handleDelete} title="Delete">
         <Trash2 className="w-4 h-4" />
       </button>
@@ -289,6 +369,7 @@ export default function ProjectDetail() {
   const [error, setError] = useState(null)
   const [previewPattern, setPreviewPattern] = useState(null)
   const [previewMs, setPreviewMs] = useState(null)
+  const [purchasingMaterial, setPurchasingMaterial] = useState(null)
   const editDialogRef = useRef(null)
   const [editName, setEditName] = useState('')
   const [editDesc, setEditDesc] = useState('')
@@ -344,6 +425,41 @@ export default function ProjectDetail() {
 
   const removeMaterial = (materialId) =>
     setProject(prev => ({ ...prev, materials: prev.materials.filter(m => m.id !== materialId) }))
+
+  async function handleTogglePurchase(material, newPurchased) {
+    if (newPurchased === 1) {
+      setPurchasingMaterial(material)
+    } else {
+      try {
+        const res = await fetch(`${API}/api/projects/${id}/materials/${material.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ purchased: 0, price: null, quantity: null }),
+        })
+        if (!res.ok) throw new Error(`Error ${res.status}`)
+        const updated = await res.json()
+        setProject(prev => ({ ...prev, materials: prev.materials.map(m => m.id === updated.id ? updated : m) }))
+      } catch (err) {
+        console.error('Toggle failed:', err)
+      }
+    }
+  }
+
+  async function handleConfirmPurchase({ price, quantity }) {
+    try {
+      const res = await fetch(`${API}/api/projects/${id}/materials/${purchasingMaterial.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purchased: 1, price, quantity }),
+      })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      const updated = await res.json()
+      setProject(prev => ({ ...prev, materials: prev.materials.map(m => m.id === updated.id ? updated : m) }))
+      setPurchasingMaterial(null)
+    } catch (err) {
+      console.error('Confirm purchase failed:', err)
+    }
+  }
 
   async function removeMeasurementSet(msId) {
     try {
@@ -441,6 +557,13 @@ export default function ProjectDetail() {
       {previewMs && (
         <MeasurementSetModal ms={previewMs} onClose={() => setPreviewMs(null)} />
       )}
+      {purchasingMaterial && (
+        <PurchaseModal
+          material={purchasingMaterial}
+          onConfirm={handleConfirmPurchase}
+          onClose={() => setPurchasingMaterial(null)}
+        />
+      )}
       <ProjectFormModal
         dialogRef={editDialogRef}
         mode="edit"
@@ -526,16 +649,31 @@ export default function ProjectDetail() {
 
           {/* Materials */}
           <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 md:overflow-hidden">
-            <div className="flex items-center justify-between mb-3 shrink-0">
-              <h2 className="text-lg font-medium">Materials</h2>
+            <div className="flex items-center justify-between mb-1 shrink-0">
+              <div>
+                <h2 className="text-lg font-medium">Materials</h2>
+                {(() => {
+                  const spent = (project.materials ?? [])
+                    .filter(m => m.purchased && m.price != null)
+                    .reduce((sum, m) => sum + m.price, 0)
+                  if (spent === 0) return null
+                  return (
+                    <p className="text-xs text-base-content/50 mt-0.5">
+                      Expenses: ${spent.toFixed(2)}{project.budget != null ? ` / $${Number(project.budget).toFixed(2)}` : ''}
+                    </p>
+                  )
+                })()}
+              </div>
               <Link to={`/projects/${id}/materials/add`} className="btn btn-primary btn-sm">+ Add</Link>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto mt-2">
               {project.materials?.length > 0 ? (
                 <div className="space-y-1">
-                  {project.materials.map(m => (
-                    <MaterialRow key={m.id} material={m} projectId={id} onDelete={removeMaterial} />
-                  ))}
+                  {[...project.materials]
+                    .sort((a, b) => (b.purchased || 0) - (a.purchased || 0))
+                    .map(m => (
+                      <MaterialRow key={m.id} material={m} projectId={id} onDelete={removeMaterial} onToggle={handleTogglePurchase} />
+                    ))}
                 </div>
               ) : (
                 <p className="text-base-content/40 text-sm px-2">No materials added yet.</p>

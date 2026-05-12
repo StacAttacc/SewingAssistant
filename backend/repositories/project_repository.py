@@ -152,14 +152,31 @@ def get_materials(project_id: int) -> list[dict]:
 
 
 def add_material(
-    project_id: int, name: str, quantity: str, notes: str, image_url: str | None = None
+    project_id: int, name: str, quantity: str, notes: str, image_url: str | None = None, price: float | None = None
 ) -> dict:
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO project_materials (project_id, name, quantity, notes, image_url) VALUES (?, ?, ?, ?, ?)",
-            (project_id, name, quantity, notes, image_url),
+            "INSERT INTO project_materials (project_id, name, quantity, notes, image_url, price) VALUES (?, ?, ?, ?, ?, ?)",
+            (project_id, name, quantity, notes, image_url, price),
         )
     return {"id": cur.lastrowid, "name": name}
+
+
+def update_material(material_id: int, project_id: int, purchased: int, price: float | None, quantity: str | None) -> dict | None:
+    with get_connection() as conn:
+        fields = "purchased = ?, price = ?"
+        params: list = [purchased, price]
+        if quantity is not None:
+            fields += ", quantity = ?"
+            params.append(quantity)
+        params += [material_id, project_id]
+        conn.execute(
+            f"UPDATE project_materials SET {fields} WHERE id = ? AND project_id = ?", params
+        )
+        row = conn.execute(
+            "SELECT * FROM project_materials WHERE id = ? AND project_id = ?", (material_id, project_id)
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:

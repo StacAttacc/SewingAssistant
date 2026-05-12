@@ -53,7 +53,7 @@ export default function AddMaterial() {
 
       {activeTab === 'manual' && (
         <div className="bg-base-200 rounded-xl p-4 overflow-y-auto md:flex-1">
-          <ManualSection onSave={saveMaterial} onDone={() => navigate(`/projects/${id}`)} />
+          <ManualSection projectId={id} onSave={saveMaterial} onDone={() => navigate(`/projects/${id}`)} />
         </div>
       )}
     </div>
@@ -108,6 +108,7 @@ function SearchSection({ projectId, onSave }) {
       .flatMap(r => r.value)
     setResults(allResults)
     setLoading(false)
+    setSaved(new Set())
   }
 
   async function handleSearch(e) {
@@ -119,8 +120,16 @@ function SearchSection({ projectId, onSave }) {
     const key = material.url
     setSavingKey(key)
     try {
-      const notes = [material.price, material.url].filter(Boolean).join(' — ')
-      await onSave({ name: material.title, quantity: '', notes, image_url: material.image_url ?? null })
+      const price = material.price
+        ? parseFloat(material.price.replace(/[^0-9.]/g, '')) || null
+        : null
+      await onSave({
+        name: material.title,
+        quantity: '',
+        notes: material.url,
+        image_url: material.image_url ?? null,
+        price,
+      })
       setSaved(prev => new Set([...prev, key]))
     } finally {
       setSavingKey(null)
@@ -190,19 +199,50 @@ function SearchSection({ projectId, onSave }) {
 
 // --- Manual Section ---
 
-function ManualSection({ onSave, onDone }) {
+function ManualSection({ projectId, onSave, onDone }) {
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
+  const [price, setPrice] = useState('')
   const [notes, setNotes] = useState('')
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  function clearImage() {
+    setImageFile(null)
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImagePreview(null)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     setError(null)
     try {
-      await onSave({ name, quantity, notes })
+      let image_url = null
+      if (imageFile) {
+        const fd = new FormData()
+        fd.append('file', imageFile)
+        const res = await fetch(`${API}/api/projects/${projectId}/materials/upload-image`, {
+          method: 'POST',
+          body: fd,
+        })
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}))
+          throw new Error(d.detail || `Upload failed (${res.status})`)
+        }
+        const { url } = await res.json()
+        image_url = url
+      }
+      await onSave({ name, quantity, notes, price: parseFloat(price), image_url })
       onDone()
     } catch (err) {
       setError(err.message)
@@ -223,18 +263,52 @@ function ManualSection({ onSave, onDone }) {
             placeholder="e.g. Cotton muslin"
             value={name}
             onChange={e => setName(e.target.value)}
+            required
             autoFocus
           />
         </div>
         <div className="form-control">
-          <label className="label"><span className="label-text font-medium">Quantity</span></label>
+          <label className="label"><span className="label-text font-medium">Quantity <span className="text-error">*</span></span></label>
           <input
             type="text"
             className="input input-bordered w-full"
             placeholder="e.g. 2.5 yards"
             value={quantity}
             onChange={e => setQuantity(e.target.value)}
+            required
           />
+        </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Price <span className="text-error">*</span></span></label>
+          <label className="input input-bordered w-full flex items-center gap-2">
+            <span className="text-base-content/40 text-sm select-none">$</span>
+            <input
+              type="number"
+              className="grow"
+              placeholder="0.00"
+              value={price}
+              onChange={e => setPrice(e.target.value)}
+              min="0"
+              step="0.01"
+              required
+            />
+          </label>
+        </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Image</span></label>
+          {imagePreview ? (
+            <div className="flex items-center gap-3">
+              <img src={imagePreview} alt="preview" className="w-20 h-20 object-cover rounded" />
+              <button type="button" className="btn btn-ghost btn-sm" onClick={clearImage}>Remove</button>
+            </div>
+          ) : (
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="file-input file-input-bordered w-full"
+              onChange={handleImageChange}
+            />
+          )}
         </div>
         <div className="form-control">
           <label className="label"><span className="label-text font-medium">Notes</span></label>
@@ -246,7 +320,7 @@ function ManualSection({ onSave, onDone }) {
             onChange={e => setNotes(e.target.value)}
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading || !name.trim()}>
+        <button type="submit" className="btn btn-primary" disabled={loading || !name.trim() || !quantity.trim() || !price}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Add to project'}
         </button>
       </form>
