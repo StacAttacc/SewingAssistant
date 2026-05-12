@@ -39,6 +39,16 @@ def update_project(project_id: int, name: str, description: str, budget: float |
     return dict(row) if row else None
 
 
+def update_project_status(project_id: int, status: str) -> dict | None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE projects SET status = ? WHERE id = ?",
+            (status, project_id),
+        )
+        row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+    return dict(row) if row else None
+
+
 def delete_project(project_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))

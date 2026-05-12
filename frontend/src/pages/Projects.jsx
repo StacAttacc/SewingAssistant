@@ -126,11 +126,16 @@ export default function Projects() {
                 {p.description && (
                   <p className="text-sm text-base-content/70 line-clamp-2">{p.description}</p>
                 )}
-                <div className="flex items-center gap-3 mt-auto pt-2 text-xs text-base-content/50">
-                  {p.budget != null && <span>${Number(p.budget).toFixed(2)}</span>}
-                  {p.created_at && (
-                    <span>{new Date(p.created_at).toLocaleDateString()}</span>
-                  )}
+                <div className="flex items-center justify-between mt-auto pt-2 text-xs text-base-content/50">
+                  <div className="flex gap-3">
+                    {p.budget != null && <span>${Number(p.budget).toFixed(2)}</span>}
+                    {p.created_at && <span>{new Date(p.created_at).toLocaleDateString()}</span>}
+                  </div>
+                  {(() => {
+                    const STATUS_BADGE = { to_start: ['To Start', 'badge-ghost'], in_progress: ['In Progress', 'badge-success'], on_hold: ['On Hold', 'badge-warning'], completed: ['Completed', 'badge-info'] }
+                    const [label, cls] = STATUS_BADGE[p.status ?? 'to_start'] ?? STATUS_BADGE.to_start
+                    return <span className={`badge badge-xs ${cls}`}>{label}</span>
+                  })()}
                 </div>
               </div>
             </Link>

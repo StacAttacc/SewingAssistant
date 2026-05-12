@@ -64,6 +64,11 @@ def init_db():
             conn.execute("ALTER TABLE projects ADD COLUMN measurements TEXT")
         except sqlite3.OperationalError:
             pass  # column already exists
+        # Migrate existing DBs that predate the status column
+        try:
+            conn.execute("ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'to_start'")
+        except sqlite3.OperationalError:
+            pass  # column already exists
 
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS project_measurement_sets (

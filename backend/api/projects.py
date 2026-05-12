@@ -9,6 +9,7 @@ UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
 from models.project import (
     ProjectCreate,
     ProjectUpdate,
+    ProjectStatusUpdate,
     Project,
     ChecklistItemCreate,
     ChecklistItem,
@@ -63,6 +64,14 @@ def update_project(project_id: int, data: ProjectUpdate):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     result = project_service.update_project(project_id, data.name, data.description, data.budget)
+    return result
+
+
+@router.patch("/{project_id}/status", response_model=Project)
+def update_project_status(project_id: int, data: ProjectStatusUpdate):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    result = project_service.update_project_status(project_id, data.status)
     return result
 
 

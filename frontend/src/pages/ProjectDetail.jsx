@@ -365,6 +365,27 @@ export default function ProjectDetail() {
     }
   }
 
+  const STATUS_OPTIONS = [
+    { value: 'to_start',    label: 'To Start',     cls: 'badge-ghost text-base-content/50' },
+    { value: 'in_progress', label: 'In Progress',  cls: 'badge-success' },
+    { value: 'on_hold',     label: 'On Hold',      cls: 'badge-warning' },
+    { value: 'completed',   label: 'Completed',    cls: 'badge-info' },
+  ]
+
+  async function handleStatusChange(status) {
+    try {
+      const res = await fetch(`${API}/api/projects/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      setProject(prev => ({ ...prev, status }))
+    } catch (err) {
+      console.error('Status update failed:', err)
+    }
+  }
+
   function openEdit() {
     setEditName(project.name)
     setEditDesc(project.description)
@@ -435,7 +456,7 @@ export default function ProjectDetail() {
 
         {/* Header */}
         <div className="shrink-0">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 w-full">
             <h1 className="text-2xl font-semibold">{project.name}</h1>
             <div className="flex gap-2">
               <button className="btn btn-ghost btn-sm" onClick={openEdit}>
@@ -450,9 +471,34 @@ export default function ProjectDetail() {
           {project.description && (
             <p className="text-base-content/70">{project.description}</p>
           )}
-          <div className="flex gap-4 mt-2 text-sm text-base-content/50">
-            {project.budget != null && <span>Budget: ${Number(project.budget).toFixed(2)}</span>}
-            {project.created_at && <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>}
+          <div className="flex w-full items-center justify-between mt-2 text-sm text-base-content/50">
+            <div className="flex gap-4 w-full items-center justify-between">
+              {project.budget != null && <span>Budget: ${Number(project.budget).toFixed(2)}</span>}
+              {(() => {
+                const current = STATUS_OPTIONS.find(o => o.value === (project.status ?? 'to_start')) ?? STATUS_OPTIONS[0]
+                return (
+                  <div className="dropdown dropdown-end">
+                    <div tabIndex={0} role="button" className={`badge cursor-pointer select-none ${current.cls}`}>
+                      {current.label} ▾
+                    </div>
+                    <ul className="dropdown-content menu bg-base-100 border border-base-300 rounded-box shadow z-10 p-1 w-36 mt-1">
+                      {STATUS_OPTIONS.map(opt => (
+                        <li key={opt.value}>
+                          <button
+                            className={`text-sm ${opt.value === current.value ? 'font-semibold' : ''}`}
+                            onClick={() => handleStatusChange(opt.value)}
+                          >
+                            <span className={`badge badge-xs ${opt.cls}`} />
+                            {opt.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })()}
+              {project.created_at && <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>}
+            </div>
           </div>
         </div>
 

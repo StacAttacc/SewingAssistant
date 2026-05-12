@@ -21,6 +21,10 @@ def update_project(project_id: int, name: str, description: str, budget: float |
     return project_repository.update_project(project_id, name, description, budget)
 
 
+def update_project_status(project_id: int, status: str) -> dict | None:
+    return project_repository.update_project_status(project_id, status)
+
+
 def delete_project(project_id: int) -> None:
     project_repository.delete_project(project_id)
 

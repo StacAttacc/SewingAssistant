@@ -101,11 +101,16 @@ class GeneratePatternRequest(BaseModel):
 # --- Response models (what the API returns) ---
 
 
+class ProjectStatusUpdate(BaseModel):
+    status: str  # 'to_start' | 'in_progress' | 'on_hold' | 'completed'
+
+
 class Project(BaseModel):
     id: int
     name: str
     description: str
     budget: float | None
+    status: str = 'to_start'
     created_at: str
 
 
