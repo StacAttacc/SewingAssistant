@@ -203,6 +203,18 @@ def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:
     return dict(row) if row else None
 
 
+def edit_material(material_id: int, project_id: int, name: str, quantity: str, notes: str, image_url: str | None, price: float | None) -> dict | None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE project_materials SET name=?, quantity=?, notes=?, image_url=?, price=? WHERE id=? AND project_id=?",
+            (name, quantity, notes, image_url, price, material_id, project_id),
+        )
+        row = conn.execute(
+            "SELECT * FROM project_materials WHERE id=? AND project_id=?", (material_id, project_id)
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def delete_material(material_id: int, project_id: int) -> None:
     with get_connection() as conn:
         conn.execute(

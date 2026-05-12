@@ -18,6 +18,7 @@ from models.project import (
     ProjectPattern,
     ProjectMaterialCreate,
     ProjectMaterialUpdate,
+    ProjectMaterialFullEdit,
     ProjectMaterial,
     ProjectDetail,
     GeneratePatternRequest,
@@ -304,6 +305,16 @@ def update_material(project_id: int, material_id: int, data: ProjectMaterialUpda
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     result = project_service.update_material(material_id, project_id, data.purchased, data.price, data.quantity)
+    if not result:
+        raise HTTPException(status_code=404, detail="Material not found")
+    return result
+
+
+@router.patch("/{project_id}/materials/{material_id}/edit", response_model=ProjectMaterial)
+def edit_material(project_id: int, material_id: int, data: ProjectMaterialFullEdit):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    result = project_service.edit_material(material_id, project_id, data.name, data.quantity, data.notes, data.image_url, data.price)
     if not result:
         raise HTTPException(status_code=404, detail="Material not found")
     return result

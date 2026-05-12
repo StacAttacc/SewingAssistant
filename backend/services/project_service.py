@@ -151,5 +151,9 @@ def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:
     return project_repository.toggle_material_purchased(material_id, project_id)
 
 
+def edit_material(material_id: int, project_id: int, name: str, quantity: str, notes: str, image_url: str | None, price: float | None) -> dict | None:
+    return project_repository.edit_material(material_id, project_id, name, quantity, notes, image_url, price)
+
+
 def delete_material(material_id: int, project_id: int) -> None:
     project_repository.delete_material(material_id, project_id)

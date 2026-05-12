@@ -52,6 +52,14 @@ class ProjectMaterialUpdate(BaseModel):
     quantity: str | None = None
 
 
+class ProjectMaterialFullEdit(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    quantity: str = Field(default="", max_length=100)
+    notes: str = Field(default="", max_length=2000)
+    image_url: str | None = None
+    price: float | None = None
+
+
 class MeasurementsUpdate(BaseModel):
     ankle:                float | None = None
     biceps:               float | None = None

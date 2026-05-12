@@ -157,6 +157,8 @@ function PatternRow({ pattern, projectId, onDelete }) {
 }
 
 function PurchaseModal({ material, onConfirm, onClose }) {
+  const urlMatch = material.notes?.match(/https?:\/\/[^\s]+/)
+  const url = urlMatch?.[0]
   const [qty, setQty] = useState(material.quantity ?? '')
   const [price, setPrice] = useState(material.price != null ? String(material.price) : '')
 
@@ -178,8 +180,11 @@ function PurchaseModal({ material, onConfirm, onClose }) {
             }
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-sm truncate">{material.name}</p>
-            {material.notes && <p className="text-xs text-base-content/50 mt-0.5 line-clamp-2">{material.notes}</p>}
+            {url
+              ? <a href={url} target="_blank" rel="noreferrer" className="font-medium text-sm truncate block hover:underline">{material.name}</a>
+              : <p className="font-medium text-sm truncate">{material.name}</p>
+            }
+            {material.notes && !url && <p className="text-xs text-base-content/50 mt-0.5 line-clamp-2">{material.notes}</p>}
           </div>
         </div>
 
@@ -215,6 +220,129 @@ function PurchaseModal({ material, onConfirm, onClose }) {
           <div className="flex justify-end gap-2 mt-1">
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary btn-sm" disabled={!qty.trim() || !price}>Confirm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function EditMaterialModal({ material, projectId, onSaved, onClose }) {
+  const urlMatch = material.notes?.match(/https?:\/\/[^\s]+/)
+  const isScraped = !!urlMatch?.[0]
+  const isPurchased = !!material.purchased
+
+  const [name, setName] = useState(material.name)
+  const [quantity, setQuantity] = useState(material.quantity ?? '')
+  const [price, setPrice] = useState(material.price != null ? String(material.price) : '')
+  const [notes, setNotes] = useState(isScraped ? '' : (material.notes ?? ''))
+  const [imagePreview, setImagePreview] = useState(material.image_url ? resolveUrl(material.image_url) : null)
+  const [imageFile, setImageFile] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  function clearImage() {
+    setImageFile(null)
+    if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview)
+    setImagePreview(null)
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      let image_url = imageFile ? null : (imagePreview ? material.image_url : null)
+      if (imageFile) {
+        const fd = new FormData()
+        fd.append('file', imageFile)
+        const res = await fetch(`${API}/api/projects/${projectId}/materials/upload-image`, {
+          method: 'POST', body: fd,
+        })
+        if (res.ok) image_url = (await res.json()).url
+      }
+      const body = isScraped
+        ? { name: material.name, quantity, notes: material.notes ?? '', image_url: material.image_url ?? null, price: price ? parseFloat(price) : null }
+        : { name, quantity, notes, image_url, price: price ? parseFloat(price) : null }
+      const res = await fetch(`${API}/api/projects/${projectId}/materials/${material.id}/edit`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      onSaved(await res.json())
+    } catch (err) {
+      console.error('Edit failed:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="bg-base-100 rounded-xl shadow-2xl w-full max-w-sm mx-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-base-300 shrink-0">
+          <span className="font-semibold">Edit material</span>
+          <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4 overflow-y-auto">
+          {!isScraped && (
+            <div className="form-control">
+              <label className="label py-1"><span className="label-text font-medium">Name <span className="text-error">*</span></span></label>
+              <input type="text" className="input input-bordered input-sm w-full" value={name} onChange={e => setName(e.target.value)} required autoFocus />
+            </div>
+          )}
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Quantity</span></label>
+            <input type="text" className="input input-bordered input-sm w-full" placeholder="e.g. 2.5 yards" value={quantity} onChange={e => setQuantity(e.target.value)} autoFocus={isScraped} />
+          </div>
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">{isPurchased ? 'Price paid' : 'Price'}</span></label>
+            <label className="input input-bordered input-sm w-full flex items-center gap-2">
+              <span className="text-base-content/40 text-sm select-none">$</span>
+              <input type="number" className="grow" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} min="0" step="0.01" />
+            </label>
+          </div>
+
+          {!isScraped && (
+            <>
+              <div className="form-control">
+                <label className="label py-1"><span className="label-text font-medium">Image</span></label>
+                {imagePreview ? (
+                  <div className="flex items-center gap-3">
+                    <img src={imagePreview} alt="preview" className="w-16 h-16 object-cover rounded" />
+                    <div className="flex flex-col gap-1">
+                      <label className="btn btn-ghost btn-xs cursor-pointer">
+                        Change
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageChange} />
+                      </label>
+                      <button type="button" className="btn btn-ghost btn-xs" onClick={clearImage}>Remove</button>
+                    </div>
+                  </div>
+                ) : (
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="file-input file-input-bordered file-input-sm w-full" onChange={handleImageChange} />
+                )}
+              </div>
+              <div className="form-control">
+                <label className="label py-1"><span className="label-text font-medium">Notes</span></label>
+                <textarea className="textarea textarea-bordered textarea-sm w-full" rows={3} placeholder="Colour, weight…" value={notes} onChange={e => setNotes(e.target.value)} />
+              </div>
+            </>
+          )}
+
+          <div className="flex flex-col gap-2 mt-1">
+            <button type="button" className="btn btn-ghost btn-sm w-full" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary btn-sm w-full" disabled={loading || (!isScraped && !name.trim())}>
+              {loading ? <span className="loading loading-spinner loading-xs" /> : 'Save'}
+            </button>
           </div>
         </form>
       </div>
@@ -377,10 +505,12 @@ function ChecklistItemModal({ item, projectId, mode: initialMode, onSaved, onClo
   )
 }
 
-function MaterialRow({ material, projectId, onDelete, onToggle }) {
+function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
   const urlMatch = material.notes?.match(/https?:\/\/[^\s]+/)
   const url = urlMatch?.[0]
+  const isScraped = !!url
   const isPurchased = !!material.purchased
+  const showEdit = !isScraped || isPurchased
 
   async function handleDelete() {
     try {
@@ -417,6 +547,11 @@ function MaterialRow({ material, projectId, onDelete, onToggle }) {
       </div>
       {material.price != null && (
         <span className="text-xs text-base-content/60 shrink-0">${Number(material.price).toFixed(2)}</span>
+      )}
+      {showEdit && (
+        <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(material)} title="Edit">
+          <Pencil className="w-4 h-4" />
+        </button>
       )}
       <DeleteButton onConfirm={handleDelete} />
     </div>
@@ -559,6 +694,7 @@ export default function ProjectDetail() {
   const [previewPattern, setPreviewPattern] = useState(null)
   const [previewMs, setPreviewMs] = useState(null)
   const [purchasingMaterial, setPurchasingMaterial] = useState(null)
+  const [editingMaterial, setEditingMaterial] = useState(null)
   const editDialogRef = useRef(null)
   const [editName, setEditName] = useState('')
   const [editDesc, setEditDesc] = useState('')
@@ -614,6 +750,11 @@ export default function ProjectDetail() {
 
   const removeMaterial = (materialId) =>
     setProject(prev => ({ ...prev, materials: prev.materials.filter(m => m.id !== materialId) }))
+
+  function handleSaveMaterial(updated) {
+    setProject(prev => ({ ...prev, materials: prev.materials.map(m => m.id === updated.id ? updated : m) }))
+    setEditingMaterial(null)
+  }
 
   async function handleTogglePurchase(material, newPurchased) {
     if (newPurchased === 1) {
@@ -752,6 +893,14 @@ export default function ProjectDetail() {
           onClose={() => setPurchasingMaterial(null)}
         />
       )}
+      {editingMaterial && (
+        <EditMaterialModal
+          material={editingMaterial}
+          projectId={id}
+          onSaved={handleSaveMaterial}
+          onClose={() => setEditingMaterial(null)}
+        />
+      )}
       <ProjectFormModal
         dialogRef={editDialogRef}
         mode="edit"
@@ -860,7 +1009,7 @@ export default function ProjectDetail() {
                   {[...project.materials]
                     .sort((a, b) => (b.purchased || 0) - (a.purchased || 0))
                     .map(m => (
-                      <MaterialRow key={m.id} material={m} projectId={id} onDelete={removeMaterial} onToggle={handleTogglePurchase} />
+                      <MaterialRow key={m.id} material={m} projectId={id} onDelete={removeMaterial} onToggle={handleTogglePurchase} onEdit={setEditingMaterial} />
                     ))}
                 </div>
               ) : (
