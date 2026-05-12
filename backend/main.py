@@ -11,10 +11,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from database import init_db
 from api.patterns import router as patterns_router
 from api.stores import router as stores_router
-from api.projects import router as projects_router
 from api.materials import router as materials_router
 from api.llm import router as llm_router
 from api.measurements import router as measurements_router
+from api.project_core import router as project_core_router
+from api.project_measurements import router as project_measurements_router
+from api.project_patterns import router as project_patterns_router
+from api.project_checklist import router as project_checklist_router
+from api.project_materials import router as project_materials_router
+from api.project_images import router as project_images_router
 
 UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -47,10 +52,18 @@ app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 app.include_router(patterns_router, prefix="/api/patterns", tags=["patterns"])
 app.include_router(stores_router, prefix="/api/stores", tags=["stores"])
-app.include_router(projects_router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials_router, prefix="/api/materials", tags=["materials"])
 app.include_router(llm_router, prefix="/api/llm", tags=["llm"])
 app.include_router(measurements_router, prefix="/api/measurements", tags=["measurements"])
+
+_projects_prefix = "/api/projects"
+_projects_tags = ["projects"]
+app.include_router(project_core_router, prefix=_projects_prefix, tags=_projects_tags)
+app.include_router(project_measurements_router, prefix=_projects_prefix, tags=_projects_tags)
+app.include_router(project_patterns_router, prefix=_projects_prefix, tags=_projects_tags)
+app.include_router(project_checklist_router, prefix=_projects_prefix, tags=_projects_tags)
+app.include_router(project_materials_router, prefix=_projects_prefix, tags=_projects_tags)
+app.include_router(project_images_router, prefix=_projects_prefix, tags=_projects_tags)
 
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")

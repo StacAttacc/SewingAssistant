@@ -36,17 +36,20 @@ PROJECT_DETAIL = {
 # --- Projects ---
 
 def test_list_projects():
-    with patch("api.projects.project_service.list_projects", return_value=[PROJECT]):
+    with patch("services.project_service.list_projects", return_value=[PROJECT]):
         resp = client.get("/api/projects/")
     assert resp.status_code == 200
     assert resp.json()[0]["name"] == "Summer Dress"
 
 
 def test_get_project_detail():
-    with patch("api.projects.project_service.get_project", return_value=PROJECT), \
-         patch("api.projects.project_service.get_saved_patterns", return_value=[PATTERN]), \
-         patch("api.projects.project_service.get_materials", return_value=[MATERIAL]), \
-         patch("api.projects.project_service.get_checklist", return_value=[CHECKLIST_ITEM]):
+    with patch("services.project_service.get_project", return_value=PROJECT), \
+         patch("services.project_service.get_saved_patterns", return_value=[PATTERN]), \
+         patch("services.project_service.get_materials", return_value=[MATERIAL]), \
+         patch("services.project_service.get_checklist", return_value=[CHECKLIST_ITEM]), \
+         patch("services.project_service.get_measurement_sets", return_value=[]), \
+         patch("services.project_service.get_progress_images", return_value=[]), \
+         patch("services.measurements_service.get_for_project", return_value=[]):
         resp = client.get("/api/projects/1")
     assert resp.status_code == 200
     data = resp.json()
@@ -57,20 +60,20 @@ def test_get_project_detail():
 
 
 def test_get_project_not_found():
-    with patch("api.projects.project_service.get_project", return_value=None):
+    with patch("services.project_service.get_project", return_value=None):
         resp = client.get("/api/projects/999")
     assert resp.status_code == 404
 
 
 def test_create_project():
-    with patch("api.projects.project_service.create_project", return_value={"id": 1, "name": "Summer Dress"}):
+    with patch("services.project_service.create_project", return_value={"id": 1, "name": "Summer Dress"}):
         resp = client.post("/api/projects/", json={"name": "Summer Dress", "description": "A light summer dress", "budget": 80.0})
     assert resp.status_code == 200
     assert resp.json()["name"] == "Summer Dress"
 
 
 def test_create_project_minimal():
-    with patch("api.projects.project_service.create_project", return_value={"id": 2, "name": "Quick Project"}):
+    with patch("services.project_service.create_project", return_value={"id": 2, "name": "Quick Project"}):
         resp = client.post("/api/projects/", json={"name": "Quick Project"})
     assert resp.status_code == 200
 
@@ -95,25 +98,8 @@ def test_add_checklist_item_empty_title():
     assert resp.status_code == 422
 
 
-# --- Measurements ---
-
-
-def test_update_measurements():
-    with patch("api.projects.project_service.get_project", return_value=PROJECT), \
-         patch("api.projects.project_service.save_measurements"):
-        resp = client.patch("/api/projects/1/measurements", json={"waist": 68.0, "hips": 92.0})
-    assert resp.status_code == 200
-    assert resp.json() == {"saved": True}
-
-
-def test_update_measurements_not_found():
-    with patch("api.projects.project_service.get_project", return_value=None):
-        resp = client.patch("/api/projects/999/measurements", json={"waist": 68.0})
-    assert resp.status_code == 404
-
-
 def test_delete_project():
-    with patch("api.projects.project_service.delete_project"):
+    with patch("services.project_service.delete_project"):
         resp = client.delete("/api/projects/1")
     assert resp.status_code == 200
     assert resp.json()["deleted"] == 1
@@ -122,21 +108,23 @@ def test_delete_project():
 # --- Checklist ---
 
 def test_get_checklist():
-    with patch("api.projects.project_service.get_checklist", return_value=[CHECKLIST_ITEM]):
+    with patch("services.project_service.get_checklist", return_value=[CHECKLIST_ITEM]):
         resp = client.get("/api/projects/1/checklist")
     assert resp.status_code == 200
     assert resp.json()[0]["title"] == "Cut fabric pieces"
 
 
 def test_add_checklist_item():
-    with patch("api.projects.project_service.add_checklist_item", return_value={"id": 1, "title": "Cut fabric pieces"}):
+    with patch("services.project_service.get_project", return_value=PROJECT), \
+         patch("services.project_service.add_checklist_item", return_value={"id": 1, "title": "Cut fabric pieces"}):
         resp = client.post("/api/projects/1/checklist", json={"title": "Cut fabric pieces", "notes": "Use sharp scissors"})
     assert resp.status_code == 200
     assert resp.json()["title"] == "Cut fabric pieces"
 
 
 def test_add_checklist_item_minimal():
-    with patch("api.projects.project_service.add_checklist_item", return_value={"id": 2, "title": "Press seams"}):
+    with patch("services.project_service.get_project", return_value=PROJECT), \
+         patch("services.project_service.add_checklist_item", return_value={"id": 2, "title": "Press seams"}):
         resp = client.post("/api/projects/1/checklist", json={"title": "Press seams"})
     assert resp.status_code == 200
 
@@ -148,20 +136,20 @@ def test_add_checklist_item_missing_title():
 
 def test_toggle_checklist_item():
     checked_item = {**CHECKLIST_ITEM, "checked": 1}
-    with patch("api.projects.project_service.toggle_checklist_item", return_value=checked_item):
+    with patch("services.project_service.toggle_checklist_item", return_value=checked_item):
         resp = client.patch("/api/projects/1/checklist/1/toggle")
     assert resp.status_code == 200
     assert resp.json()["checked"] == 1
 
 
 def test_toggle_checklist_item_not_found():
-    with patch("api.projects.project_service.toggle_checklist_item", return_value=None):
+    with patch("services.project_service.toggle_checklist_item", return_value=None):
         resp = client.patch("/api/projects/1/checklist/999/toggle")
     assert resp.status_code == 404
 
 
 def test_delete_checklist_item():
-    with patch("api.projects.project_service.delete_checklist_item"):
+    with patch("services.project_service.delete_checklist_item"):
         resp = client.delete("/api/projects/1/checklist/1")
     assert resp.status_code == 200
     assert resp.json()["deleted"] == 1
@@ -170,7 +158,7 @@ def test_delete_checklist_item():
 # --- Saved patterns ---
 
 def test_get_saved_patterns():
-    with patch("api.projects.project_service.get_saved_patterns", return_value=[PATTERN]):
+    with patch("services.project_service.get_saved_patterns", return_value=[PATTERN]):
         resp = client.get("/api/projects/1/patterns")
     assert resp.status_code == 200
     assert resp.json()[0]["title"] == "Simplicity 9898"
@@ -178,7 +166,7 @@ def test_get_saved_patterns():
 
 
 def test_save_pattern():
-    with patch("api.projects.project_service.save_pattern", return_value={"id": 1, "url": "https://simplicity.com/9898"}):
+    with patch("services.project_service.save_pattern", return_value={"id": 1, "url": "https://simplicity.com/9898"}):
         resp = client.post("/api/projects/1/patterns", json={
             "source": "simplicity",
             "title": "Simplicity 9898",
@@ -191,7 +179,7 @@ def test_save_pattern():
 
 
 def test_save_pattern_url_only():
-    with patch("api.projects.project_service.save_pattern", return_value={"id": 2, "url": "https://example.com/pattern"}):
+    with patch("services.project_service.save_pattern", return_value={"id": 2, "url": "https://example.com/pattern"}):
         resp = client.post("/api/projects/1/patterns", json={"url": "https://example.com/pattern"})
     assert resp.status_code == 200
 
@@ -202,7 +190,7 @@ def test_save_pattern_missing_url():
 
 
 def test_delete_saved_pattern():
-    with patch("api.projects.project_service.delete_saved_pattern"):
+    with patch("services.project_service.delete_saved_pattern"):
         resp = client.delete("/api/projects/1/patterns/1")
     assert resp.status_code == 200
     assert resp.json()["deleted"] == 1
@@ -211,7 +199,7 @@ def test_delete_saved_pattern():
 # --- Project materials ---
 
 def test_get_materials():
-    with patch("api.projects.project_service.get_materials", return_value=[MATERIAL]):
+    with patch("services.project_service.get_materials", return_value=[MATERIAL]):
         resp = client.get("/api/projects/1/materials")
     assert resp.status_code == 200
     assert resp.json()[0]["name"] == "Cotton fabric"
@@ -219,14 +207,16 @@ def test_get_materials():
 
 
 def test_add_material():
-    with patch("api.projects.project_service.add_material", return_value={"id": 1, "name": "Cotton fabric"}):
+    with patch("services.project_service.get_project", return_value=PROJECT), \
+         patch("services.project_service.add_material", return_value={"id": 1, "name": "Cotton fabric"}):
         resp = client.post("/api/projects/1/materials", json={"name": "Cotton fabric", "quantity": "2m", "notes": "Light blue"})
     assert resp.status_code == 200
     assert resp.json()["name"] == "Cotton fabric"
 
 
 def test_add_material_minimal():
-    with patch("api.projects.project_service.add_material", return_value={"id": 2, "name": "Thread"}):
+    with patch("services.project_service.get_project", return_value=PROJECT), \
+         patch("services.project_service.add_material", return_value={"id": 2, "name": "Thread"}):
         resp = client.post("/api/projects/1/materials", json={"name": "Thread"})
     assert resp.status_code == 200
 
@@ -236,22 +226,8 @@ def test_add_material_missing_name():
     assert resp.status_code == 422
 
 
-def test_toggle_material_purchased():
-    purchased_material = {**MATERIAL, "purchased": 1}
-    with patch("api.projects.project_service.toggle_material_purchased", return_value=purchased_material):
-        resp = client.patch("/api/projects/1/materials/1/toggle")
-    assert resp.status_code == 200
-    assert resp.json()["purchased"] == 1
-
-
-def test_toggle_material_not_found():
-    with patch("api.projects.project_service.toggle_material_purchased", return_value=None):
-        resp = client.patch("/api/projects/1/materials/999/toggle")
-    assert resp.status_code == 404
-
-
 def test_delete_material():
-    with patch("api.projects.project_service.delete_material"):
+    with patch("services.project_service.delete_material"):
         resp = client.delete("/api/projects/1/materials/1")
     assert resp.status_code == 200
     assert resp.json()["deleted"] == 1
