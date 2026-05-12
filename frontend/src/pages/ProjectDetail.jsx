@@ -222,6 +222,161 @@ function PurchaseModal({ material, onConfirm, onClose }) {
   )
 }
 
+function ChecklistItemModal({ item, projectId, mode: initialMode, onSaved, onClose }) {
+  const [uiMode, setUiMode] = useState(initialMode)
+  const [title, setTitle] = useState(item.title)
+  const [notes, setNotes] = useState(item.notes ?? '')
+  const [existingUrls, setExistingUrls] = useState(item.image_urls ?? [])
+  const [newFiles, setNewFiles] = useState([]) // [{file, preview}]
+  const [loading, setLoading] = useState(false)
+
+  function handleFileChange(e) {
+    const files = Array.from(e.target.files)
+    const entries = files.map(f => ({ file: f, preview: URL.createObjectURL(f) }))
+    setNewFiles(prev => [...prev, ...entries])
+    e.target.value = ''
+  }
+
+  function removeExisting(url) {
+    setExistingUrls(prev => prev.filter(u => u !== url))
+  }
+
+  function removeNew(idx) {
+    setNewFiles(prev => {
+      URL.revokeObjectURL(prev[idx].preview)
+      return prev.filter((_, i) => i !== idx)
+    })
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const uploadedUrls = await Promise.all(
+        newFiles.map(async ({ file }) => {
+          const fd = new FormData()
+          fd.append('file', file)
+          const res = await fetch(`${API}/api/projects/${projectId}/checklist/${item.id}/upload-image`, {
+            method: 'POST', body: fd,
+          })
+          const data = await res.json()
+          return data.url
+        })
+      )
+      const image_urls = [...existingUrls, ...uploadedUrls]
+      const patchRes = await fetch(`${API}/api/projects/${projectId}/checklist/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim() || item.title, notes, image_urls }),
+      })
+      const patched = await patchRes.json()
+      if (uiMode === 'complete') {
+        const toggleRes = await fetch(
+          `${API}/api/projects/${projectId}/checklist/${item.id}/toggle`, { method: 'PATCH' }
+        )
+        const toggled = await toggleRes.json()
+        onSaved({ ...patched, ...toggled })
+      } else {
+        onSaved(patched)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const allImages = [
+    ...existingUrls.map(url => ({ src: resolveUrl(url), onRemove: () => removeExisting(url) })),
+    ...newFiles.map(({ preview }, idx) => ({ src: preview, onRemove: () => removeNew(idx) })),
+  ]
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div
+        className="relative bg-base-100 rounded-xl shadow-2xl w-full max-w-sm mx-4 flex flex-col max-h-[90vh]"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-base-300 shrink-0">
+          <span className="font-semibold">{uiMode === 'complete' ? 'Complete step' : 'Edit step'}</span>
+          <div className="flex gap-1 shrink-0">
+            {uiMode === 'complete' && (
+              <button className="btn btn-sm btn-ghost" onClick={() => setUiMode('edit')} title="Edit">
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
+            <button className="btn btn-sm btn-ghost text-lg leading-none" onClick={onClose}>×</button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4 overflow-y-auto">
+          {uiMode === 'edit' ? (
+            <div className="form-control">
+              <label className="label py-1"><span className="label-text font-medium">Title</span></label>
+              <input
+                type="text"
+                className="input input-bordered input-sm w-full"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                autoFocus
+              />
+            </div>
+          ) : (
+            <p className="text-sm font-medium">{item.title}</p>
+          )}
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Photos</span></label>
+            {allImages.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {allImages.map(({ src, onRemove }, i) => (
+                  <div key={i} className="relative w-16 h-16 shrink-0">
+                    <img src={src} alt="" className="w-full h-full object-cover rounded" />
+                    <button
+                      type="button"
+                      className="absolute -top-1 -right-1 bg-base-100 rounded-full w-4 h-4 flex items-center justify-center text-xs shadow leading-none"
+                      onClick={onRemove}
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className="btn btn-ghost btn-sm w-full border border-dashed border-base-300 cursor-pointer">
+              + Add photo
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </label>
+          </div>
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Notes</span></label>
+            <textarea
+              className="textarea textarea-bordered textarea-sm w-full"
+              rows={3}
+              placeholder="How did it go?"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              autoFocus={uiMode === 'complete'}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 mt-1">
+            <button type="button" className="btn btn-ghost btn-sm w-full" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary btn-sm w-full" disabled={loading}>
+              {loading
+                ? <span className="loading loading-spinner loading-xs" />
+                : uiMode === 'complete' ? 'Mark done' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function MaterialRow({ material, projectId, onDelete, onToggle }) {
   const urlMatch = material.notes?.match(/https?:\/\/[^\s]+/)
   const url = urlMatch?.[0]
@@ -272,15 +427,25 @@ function ChecklistSection({ projectId, initialItems }) {
   const [items, setItems] = useState(initialItems)
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
+  const [completingItem, setCompletingItem] = useState(null)
+  const [editingItem, setEditingItem] = useState(null)
 
-  async function handleToggle(itemId) {
-    try {
-      const res = await fetch(`${API}/api/projects/${projectId}/checklist/${itemId}/toggle`, { method: 'PATCH' })
-      if (!res.ok) throw new Error(`Error ${res.status}`)
-      const updated = await res.json()
-      setItems(prev => prev.map(i => i.id === itemId ? updated : i))
-    } catch (err) {
-      console.error('Toggle failed:', err)
+  const checkedCount = items.filter(i => !!i.checked).length
+
+  function handleSaved(updated) {
+    setItems(prev => prev.map(i => i.id === updated.id ? updated : i))
+    setCompletingItem(null)
+    setEditingItem(null)
+  }
+
+  function handleCheckChange(item) {
+    if (!item.checked) {
+      setCompletingItem(item)
+    } else {
+      fetch(`${API}/api/projects/${projectId}/checklist/${item.id}/toggle`, { method: 'PATCH' })
+        .then(r => r.json())
+        .then(updated => setItems(prev => prev.map(i => i.id === item.id ? updated : i)))
+        .catch(err => console.error('Uncheck failed:', err))
     }
   }
 
@@ -315,43 +480,72 @@ function ChecklistSection({ projectId, initialItems }) {
     }
   }
 
+  const activeModal = completingItem || editingItem
+
   return (
-    <div className="flex flex-col md:flex-1 md:min-h-0">
-      <form onSubmit={handleAdd} className="flex gap-2 mb-3 shrink-0">
-        <input
-          type="text"
-          className="input input-bordered input-sm flex-1"
-          placeholder="Add item…"
-          value={newTitle}
-          onChange={e => setNewTitle(e.target.value)}
+    <>
+      {activeModal && (
+        <ChecklistItemModal
+          item={activeModal}
+          projectId={projectId}
+          mode={completingItem ? 'complete' : 'edit'}
+          onSaved={handleSaved}
+          onClose={() => { setCompletingItem(null); setEditingItem(null) }}
         />
-        <button type="submit" className="btn btn-sm btn-primary" disabled={adding || !newTitle.trim()}>
-          {adding ? <span className="loading loading-spinner loading-xs" /> : 'Add'}
-        </button>
-      </form>
-      <div className="md:flex-1 md:min-h-0 overflow-y-auto">
-        {items.length > 0 ? (
-          <ul className="space-y-2">
-            {items.map(item => (
-              <li key={item.id} className="flex items-center gap-3 group px-2 py-1 rounded-lg hover:bg-base-300 transition-colors">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-sm"
-                  checked={!!item.checked}
-                  onChange={() => handleToggle(item.id)}
-                />
-                <span className={`flex-1 text-sm ${item.checked ? 'line-through text-base-content/40' : ''}`}>
-                  {item.title}
-                </span>
-                <DeleteButton onConfirm={() => handleDelete(item.id)} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-base-content/40 text-sm px-2">No checklist items yet.</p>
-        )}
+      )}
+      <div className="flex flex-col md:flex-1 md:min-h-0">
+        <div className="flex items-center justify-between mb-3 shrink-0">
+          <h2 className="text-lg font-medium">Checklist</h2>
+          {items.length > 0 && (
+            <span className="text-sm text-base-content/50">{checkedCount} / {items.length} done</span>
+          )}
+        </div>
+        <form onSubmit={handleAdd} className="flex gap-2 mb-3 shrink-0">
+          <input
+            type="text"
+            className="input input-bordered input-sm flex-1"
+            placeholder="Add item…"
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+          />
+          <button type="submit" className="btn btn-sm btn-primary" disabled={adding || !newTitle.trim()}>
+            {adding ? <span className="loading loading-spinner loading-xs" /> : 'Add'}
+          </button>
+        </form>
+        <div className="md:flex-1 md:min-h-0 overflow-y-auto">
+          {items.length > 0 ? (
+            <ul className="space-y-2">
+              {items.map(item => (
+                <li key={item.id} className="flex items-center gap-2 group px-2 py-1 rounded-lg hover:bg-base-300 transition-colors">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm shrink-0"
+                    checked={!!item.checked}
+                    onChange={() => handleCheckChange(item)}
+                  />
+                  {item.image_urls?.[0] && (
+                    <img src={resolveUrl(item.image_urls[0])} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
+                  )}
+                  <span className={`flex-1 text-sm min-w-0 truncate ${item.checked ? 'line-through text-base-content/40' : ''}`}>
+                    {item.title}
+                  </span>
+                  <button
+                    className="btn btn-xs btn-ghost shrink-0"
+                    onClick={() => setEditingItem(item)}
+                    title="Edit"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <DeleteButton onConfirm={() => handleDelete(item.id)} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-base-content/40 text-sm px-2">No checklist items yet.</p>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -677,9 +871,6 @@ export default function ProjectDetail() {
 
           {/* Checklist */}
           <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 md:overflow-hidden">
-            <div className="flex items-center justify-between mb-3 shrink-0">
-              <h2 className="text-lg font-medium">Checklist</h2>
-            </div>
             <ChecklistSection projectId={id} initialItems={project.checklist ?? []} />
           </div>
 

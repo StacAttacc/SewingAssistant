@@ -95,6 +95,18 @@ def toggle_checklist_item(item_id: int, project_id: int) -> dict | None:
     return dict(row) if row else None
 
 
+def update_checklist_item(item_id: int, project_id: int, title: str, notes: str, image_urls_json: str) -> dict | None:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE checklist_items SET title = ?, notes = ?, image_url = ? WHERE id = ? AND project_id = ?",
+            (title, notes, image_urls_json, item_id, project_id),
+        )
+        row = conn.execute(
+            "SELECT * FROM checklist_items WHERE id = ? AND project_id = ?", (item_id, project_id)
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def delete_checklist_item(item_id: int, project_id: int) -> None:
     with get_connection() as conn:
         conn.execute(

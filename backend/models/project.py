@@ -22,6 +22,12 @@ class ChecklistItemCreate(BaseModel):
     notes: str = Field(default="", max_length=2000)
 
 
+class ChecklistItemUpdate(BaseModel):
+    title: str = Field(default="", max_length=500)
+    notes: str = Field(default="", max_length=2000)
+    image_urls: list[str] = []
+
+
 class ProjectPatternSave(BaseModel):
     """Save a pattern (from any scraper) to a project."""
 
@@ -127,6 +133,7 @@ class ChecklistItem(BaseModel):
     title: str
     notes: str
     checked: int  # 0 or 1
+    image_urls: list[str] = []
     created_at: str
 
 

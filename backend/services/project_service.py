@@ -69,8 +69,23 @@ def delete_measurement_set(ms_id: int, project_id: int) -> None:
 # --- Checklist ---
 
 
+def _parse_checklist_images(row: dict) -> dict:
+    raw = row.pop('image_url', None) or '[]'
+    try:
+        urls = json.loads(raw)
+        if isinstance(urls, str):
+            urls = [urls] if urls else []
+        elif not isinstance(urls, list):
+            urls = []
+    except (json.JSONDecodeError, ValueError):
+        urls = [raw] if raw else []
+    row['image_urls'] = urls
+    return row
+
+
 def get_checklist(project_id: int) -> list[dict]:
-    return project_repository.get_checklist(project_id)
+    rows = project_repository.get_checklist(project_id)
+    return [_parse_checklist_images(r) for r in rows]
 
 
 def add_checklist_item(project_id: int, title: str, notes: str) -> dict:
@@ -78,7 +93,13 @@ def add_checklist_item(project_id: int, title: str, notes: str) -> dict:
 
 
 def toggle_checklist_item(item_id: int, project_id: int) -> dict | None:
-    return project_repository.toggle_checklist_item(item_id, project_id)
+    row = project_repository.toggle_checklist_item(item_id, project_id)
+    return _parse_checklist_images(row) if row else None
+
+
+def update_checklist_item(item_id: int, project_id: int, title: str, notes: str, image_urls: list) -> dict | None:
+    row = project_repository.update_checklist_item(item_id, project_id, title, notes, json.dumps(image_urls))
+    return _parse_checklist_images(row) if row else None
 
 
 def delete_checklist_item(item_id: int, project_id: int) -> None:

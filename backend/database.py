@@ -74,6 +74,11 @@ def init_db():
             conn.execute("ALTER TABLE project_materials ADD COLUMN price REAL")
         except sqlite3.OperationalError:
             pass  # column already exists
+        # Migrate existing DBs that predate the image_url column on checklist_items
+        try:
+            conn.execute("ALTER TABLE checklist_items ADD COLUMN image_url TEXT")
+        except sqlite3.OperationalError:
+            pass  # column already exists
 
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS project_measurement_sets (
