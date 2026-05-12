@@ -204,6 +204,9 @@ function ManualSection({ projectId, onSave, onDone }) {
   const [quantity, setQuantity] = useState('')
   const [price, setPrice] = useState('')
   const [notes, setNotes] = useState('')
+  const [careInstructions, setCareInstructions] = useState('')
+  const [grainDirection, setGrainDirection] = useState('')
+  const [preWash, setPreWash] = useState(0)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -242,7 +245,12 @@ function ManualSection({ projectId, onSave, onDone }) {
         const { url } = await res.json()
         image_url = url
       }
-      await onSave({ name, quantity, notes, price: parseFloat(price), image_url })
+      await onSave({
+        name, quantity, notes, price: parseFloat(price), image_url,
+        care_instructions: careInstructions || null,
+        grain_direction: grainDirection || null,
+        pre_wash: preWash,
+      })
       onDone()
     } catch (err) {
       setError(err.message)
@@ -320,6 +328,38 @@ function ManualSection({ projectId, onSave, onDone }) {
             onChange={e => setNotes(e.target.value)}
           />
         </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Care instructions</span></label>
+          <input
+            type="text"
+            className="input input-bordered w-full"
+            placeholder="e.g. Machine wash cold, lay flat to dry"
+            value={careInstructions}
+            onChange={e => setCareInstructions(e.target.value)}
+          />
+        </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Grain direction</span></label>
+          <select
+            className="select select-bordered w-full"
+            value={grainDirection}
+            onChange={e => setGrainDirection(e.target.value)}
+          >
+            <option value="">— not specified —</option>
+            <option value="straight">Straight grain</option>
+            <option value="bias">Bias cut</option>
+            <option value="cross">Cross grain</option>
+          </select>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer py-1">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-sm"
+            checked={!!preWash}
+            onChange={e => setPreWash(e.target.checked ? 1 : 0)}
+          />
+          <span className="label-text">Pre-washed</span>
+        </label>
         <button type="submit" className="btn btn-primary" disabled={loading || !name.trim() || !quantity.trim() || !price}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Add to project'}
         </button>
