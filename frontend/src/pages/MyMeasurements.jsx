@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil } from 'lucide-react'
+import { Eye, Pencil } from 'lucide-react'
 import DeleteButton from '../components/DeleteButton'
 import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
@@ -92,12 +92,11 @@ export default function MyMeasurements() {
           ) : (
             <div className="flex flex-col gap-1 overflow-y-auto">
               {sets.map(ms => (
-                <div
-                  key={ms.id}
-                  className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer"
-                  onClick={() => setPreviewMs(ms)}
-                >
+                <div key={ms.id} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
                   <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
+                  <button className="btn btn-xs btn-ghost shrink-0" onClick={() => setPreviewMs(ms)} title="View">
+                    <Eye className="w-4 h-4" />
+                  </button>
                   <DeleteButton className="shrink-0" onConfirm={() => handleDelete(ms.id)} />
                 </div>
               ))}

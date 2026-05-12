@@ -1340,29 +1340,20 @@ export default function ProjectDetail() {
               {(project.global_measurement_sets?.length > 0 || project.measurement_sets?.length > 0) ? (
                 <div className="space-y-1">
                   {project.global_measurement_sets?.map(ms => (
-                    <div
-                      key={`g-${ms.id}`}
-                      className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer"
-                      onClick={() => setPreviewMs({ ...ms, editUrl: `/measurements/${ms.id}/edit` })}
-                    >
+                    <div key={`g-${ms.id}`} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
                       <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
                       <span className="badge badge-ghost badge-xs shrink-0">Shared</span>
+                      <button className="btn btn-xs btn-ghost shrink-0" onClick={() => setPreviewMs({ ...ms, editUrl: `/measurements/${ms.id}/edit` })} title="View">
+                        <Eye className="w-4 h-4" />
+                      </button>
                       <DeleteButton className="shrink-0" onConfirm={() => removeGlobalMeasurementSet(ms.id)} />
                     </div>
                   ))}
                   {project.measurement_sets?.map(ms => (
-                    <div
-                      key={ms.id}
-                      className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors cursor-pointer"
-                      onClick={() => setPreviewMs({ ...ms, editUrl: `/projects/${id}/measurements/${ms.id}/edit` })}
-                    >
+                    <div key={ms.id} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors">
                       <span className="flex-1 text-sm font-medium truncate min-w-0">{ms.name}</span>
-                      <button
-                        className="btn btn-xs btn-ghost shrink-0"
-                        onClick={e => { e.stopPropagation(); navigate(`/projects/${id}/measurements/${ms.id}/edit`) }}
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
+                      <button className="btn btn-xs btn-ghost shrink-0" onClick={() => setPreviewMs({ ...ms, editUrl: `/projects/${id}/measurements/${ms.id}/edit` })} title="View">
+                        <Eye className="w-4 h-4" />
                       </button>
                       <DeleteButton className="shrink-0" onConfirm={() => removeMeasurementSet(ms.id)} />
                     </div>
