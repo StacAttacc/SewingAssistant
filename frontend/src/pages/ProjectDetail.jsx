@@ -452,11 +452,11 @@ export default function ProjectDetail() {
         onSubmit={handleUpdate}
       />
 
-      <div className="flex flex-col md:h-full gap-4">
+      <div className="flex flex-col md:h-full gap-4 w-full">
 
         {/* Header */}
-        <div className="shrink-0">
-          <div className="flex items-center justify-between mb-2 w-full">
+        <div className="shrink-0 w-full">
+          <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-semibold">{project.name}</h1>
             <div className="flex gap-2">
               <button className="btn btn-ghost btn-sm" onClick={openEdit}>

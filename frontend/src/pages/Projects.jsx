@@ -3,12 +3,22 @@ import { Link, useNavigate } from 'react-router-dom'
 import { API } from '../api'
 import ProjectFormModal from '../components/ProjectFormModal'
 
+const STATUS_OPTIONS = [
+  { value: 'to_start',    label: 'To Start',    dot: 'bg-base-content/50', badge: 'bg-base-content/50 text-black' },
+  { value: 'in_progress', label: 'In Progress', dot: 'bg-success',         badge: 'badge-success' },
+  { value: 'on_hold',     label: 'On Hold',     dot: 'bg-warning',         badge: 'badge-warning' },
+  { value: 'completed',   label: 'Completed',   dot: 'bg-info',            badge: 'badge-info' },
+]
+
 export default function Projects() {
   const navigate = useNavigate()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState(null)
+  const [sortDir, setSortDir] = useState('asc')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   const [modalName, setModalName] = useState('')
   const [modalDesc, setModalDesc] = useState('')
@@ -34,14 +44,40 @@ export default function Projects() {
 
   useEffect(() => { fetchProjects() }, [])
 
-  const filtered = projects.filter(p => {
+  function toggleSort(field) {
+    if (sortBy === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(field); setSortDir('asc') }
+  }
+
+  const filtered = (() => {
     const q = search.toLowerCase()
-    return (
-      p.name?.toLowerCase().includes(q) ||
-      p.description?.toLowerCase().includes(q) ||
-      String(p.budget ?? '').includes(q)
-    )
-  })
+    let result = projects.filter(p => {
+      const matchesSearch = !q ||
+        p.name?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+      const matchesStatus = statusFilter === 'all' || (p.status ?? 'to_start') === statusFilter
+      return matchesSearch && matchesStatus
+    })
+    if (sortBy === 'title') {
+      result = [...result].sort((a, b) => {
+        const cmp = a.name.localeCompare(b.name)
+        return sortDir === 'asc' ? cmp : -cmp
+      })
+    } else if (sortBy === 'budget') {
+      result = [...result].sort((a, b) => {
+        const a_ = a.budget ?? -Infinity
+        const b_ = b.budget ?? -Infinity
+        return sortDir === 'asc' ? a_ - b_ : b_ - a_
+      })
+    } else if (sortBy === 'date') {
+      result = [...result].sort((a, b) => {
+        const a_ = new Date(a.created_at).getTime()
+        const b_ = new Date(b.created_at).getTime()
+        return sortDir === 'asc' ? a_ - b_ : b_ - a_
+      })
+    }
+    return result
+  })()
 
   async function handleCreate(e) {
     e.preventDefault()
@@ -72,7 +108,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold">Projects</h1>
         <button className="btn btn-primary btn-sm" onClick={() => {
@@ -86,7 +122,7 @@ export default function Projects() {
       </div>
 
       {/* Search */}
-      <div className="mb-6">
+      <div className="mb-3">
         <input
           type="text"
           placeholder="Search projects…"
@@ -94,6 +130,46 @@ export default function Projects() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        {[['title', 'Title'], ['budget', 'Budget'], ['date', 'Date']].map(([field, label]) => (
+          <button
+            key={field}
+            className={`btn btn-xs min-w-[4.5rem] ${sortBy === field ? 'btn-neutral' : 'btn-ghost'}`}
+            onClick={() => toggleSort(field)}
+          >
+            {label} {sortBy === field ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+          </button>
+        ))}
+
+        <div className="w-px h-4 bg-base-300 mx-1 shrink-0" />
+
+        <button
+          className={`badge cursor-pointer select-none badge-ghost`}
+          onClick={() => setStatusFilter('all')}
+        >
+          All
+        </button>
+        {STATUS_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            className={`badge cursor-pointer select-none ${opt.badge}`}
+            onClick={() => setStatusFilter(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+
+        {(sortBy !== null || statusFilter !== 'all') && (
+          <button
+            className="btn btn-xs btn-ghost text-base-content/40 ml-auto"
+            onClick={() => { setSortBy(null); setSortDir('asc'); setStatusFilter('all') }}
+          >
+            Clear ×
+          </button>
+        )}
       </div>
 
       {/* List */}
@@ -132,9 +208,8 @@ export default function Projects() {
                     {p.created_at && <span>{new Date(p.created_at).toLocaleDateString()}</span>}
                   </div>
                   {(() => {
-                    const STATUS_BADGE = { to_start: ['To Start', 'badge-ghost'], in_progress: ['In Progress', 'badge-success'], on_hold: ['On Hold', 'badge-warning'], completed: ['Completed', 'badge-info'] }
-                    const [label, cls] = STATUS_BADGE[p.status ?? 'to_start'] ?? STATUS_BADGE.to_start
-                    return <span className={`badge badge-xs ${cls}`}>{label}</span>
+                    const opt = STATUS_OPTIONS.find(o => o.value === (p.status ?? 'to_start')) ?? STATUS_OPTIONS[0]
+                    return <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${opt.dot}`} title={opt.label} />
                   })()}
                 </div>
               </div>
