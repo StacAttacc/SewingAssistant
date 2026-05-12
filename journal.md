@@ -47,5 +47,13 @@
     Ça fait un moment que je n'ai pas touché au projet et j'ai changé de Windows à Mint, puis à Arch, et enfin à NixOS.
     J'ai aussi changé de VsCode à Neovim, puis à Nixvim avec tout l'écosystème NixOS, et j'ai donc ajouté un Nix Flake au projet.
 
-**9 mai 17h00 10 mai 3:00 ~10h**
+**9 mai 17h00 -> 10 mai 3:00 ~10h**
     Déploiement sur tailscale avec Kubernetes, Docker et Git
+
+**11 mai 4:00 -> 11 mai 13:00 ~7h**
+    Uniformisation de toute l'application. Elle n'était pas consistente part out et il a aussi fallu accommoder les téléphones, vu que je vais l'utiliser dessus.
+
+**11 mai 18:00 -> 12 mai 3:00 ~9h**
+    Retravaillé le UX et le UI pour prendre les tailles
+    Ajouté plus de détails dans les formulaires
+    Ajouté de la fonctionalité pour filter les projets et modifier les données déja entrées
