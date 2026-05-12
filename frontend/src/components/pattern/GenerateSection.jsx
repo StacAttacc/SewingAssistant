@@ -93,7 +93,7 @@ export default function GenerateSection({ projectId, onDone }) {
 
           <button
             type="submit"
-            className="btn btn-primary w-full"
+            className="btn border-orange-500 text-orange-500 hover:bg-orange-500 hover:border-orange-500 hover:text-white w-full"
             disabled={loading || !selectedSetId || !prompt.trim()}
           >
             {loading

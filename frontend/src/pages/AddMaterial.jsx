@@ -148,7 +148,7 @@ function SearchSection({ projectId, onSave }) {
           value={query}
           onChange={e => setQuery(e.target.value)}
         />
-        <button type="button" className="btn btn-outline btn-secondary" disabled={suggesting || loading} onClick={handleSuggest}>
+        <button type="button" className="btn border-orange-500 text-orange-500 hover:bg-orange-500 hover:border-orange-500 hover:text-white" disabled={suggesting || loading} onClick={handleSuggest}>
           {suggesting ? <span className="loading loading-spinner loading-sm" /> : 'Suggest'}
         </button>
         <button type="submit" className="btn btn-primary" disabled={loading || !query.trim()}>
