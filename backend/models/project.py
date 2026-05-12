@@ -188,6 +188,13 @@ class GlobalMeasurementSet(BaseModel):
     created_at: str
 
 
+class ProjectProgressImage(BaseModel):
+    id: int
+    project_id: int
+    url: str
+    created_at: str
+
+
 class ProjectDetail(BaseModel):
     id: int
     name: str
@@ -199,3 +206,4 @@ class ProjectDetail(BaseModel):
     checklist: list[ChecklistItem]
     measurement_sets: list[ProjectMeasurementSet]
     global_measurement_sets: list[GlobalMeasurementSet] = []
+    progress_images: list[ProjectProgressImage] = []

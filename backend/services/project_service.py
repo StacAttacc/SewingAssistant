@@ -29,6 +29,21 @@ def delete_project(project_id: int) -> None:
     project_repository.delete_project(project_id)
 
 
+# --- Progress images ---
+
+
+def get_progress_images(project_id: int) -> list[dict]:
+    return project_repository.get_progress_images(project_id)
+
+
+def add_progress_image(project_id: int, url: str) -> dict:
+    return project_repository.add_progress_image(project_id, url)
+
+
+def delete_progress_image(image_id: int, project_id: int) -> None:
+    project_repository.delete_progress_image(image_id, project_id)
+
+
 # --- Measurement sets ---
 
 

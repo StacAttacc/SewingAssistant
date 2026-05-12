@@ -81,6 +81,15 @@ def init_db():
             pass  # column already exists
 
         conn.executescript("""
+            CREATE TABLE IF NOT EXISTS project_progress_images (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                url         TEXT NOT NULL,
+                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS project_measurement_sets (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
