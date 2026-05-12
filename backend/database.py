@@ -78,7 +78,30 @@ def init_db():
         try:
             conn.execute("ALTER TABLE checklist_items ADD COLUMN image_url TEXT")
         except sqlite3.OperationalError:
-            pass  # column already exists
+            pass
+        # Migrate existing DBs that predate the position column on checklist_items
+        try:
+            conn.execute("ALTER TABLE checklist_items ADD COLUMN position INTEGER")
+            conn.execute("""
+                UPDATE checklist_items SET position = (
+                    SELECT COUNT(*) FROM checklist_items c2
+                    WHERE c2.project_id = checklist_items.project_id
+                      AND (c2.created_at < checklist_items.created_at
+                           OR (c2.created_at = checklist_items.created_at AND c2.id <= checklist_items.id))
+                )
+            """)
+        except sqlite3.OperationalError:
+            pass
+        # Migrate existing DBs that predate fabric note columns on project_materials
+        for col_sql in [
+            "ALTER TABLE project_materials ADD COLUMN care_instructions TEXT",
+            "ALTER TABLE project_materials ADD COLUMN grain_direction TEXT",
+            "ALTER TABLE project_materials ADD COLUMN pre_wash INTEGER NOT NULL DEFAULT 0",
+        ]:
+            try:
+                conn.execute(col_sql)
+            except sqlite3.OperationalError:
+                pass  # column already exists
 
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS project_progress_images (

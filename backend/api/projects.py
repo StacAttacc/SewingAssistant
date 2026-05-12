@@ -4,6 +4,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from services import project_service, measurements_service
 from services import pattern_generator
+from repositories import project_repository
 
 UPLOADS_DIR = os.getenv("UPLOADS_DIR", "uploads")
 from models.project import (
@@ -13,6 +14,7 @@ from models.project import (
     Project,
     ChecklistItemCreate,
     ChecklistItemUpdate,
+    ChecklistReorder,
     ChecklistItem,
     ProjectPatternSave,
     ProjectPattern,
@@ -167,6 +169,13 @@ def add_checklist_item(project_id: int, data: ChecklistItemCreate):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     return project_service.add_checklist_item(project_id, data.title, data.notes)
+
+
+@router.patch("/{project_id}/checklist/reorder", status_code=204)
+def reorder_checklist(project_id: int, data: ChecklistReorder):
+    if not project_service.get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    project_repository.reorder_checklist(project_id, data.ids)
 
 
 @router.patch("/{project_id}/checklist/{item_id}/toggle", response_model=ChecklistItem)
@@ -334,7 +343,8 @@ def add_material(project_id: int, data: ProjectMaterialCreate):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     return project_service.add_material(
-        project_id, data.name, data.quantity, data.notes, data.image_url, data.price
+        project_id, data.name, data.quantity, data.notes, data.image_url, data.price,
+        data.care_instructions, data.grain_direction, data.pre_wash,
     )
 
 
@@ -352,7 +362,10 @@ def update_material(project_id: int, material_id: int, data: ProjectMaterialUpda
 def edit_material(project_id: int, material_id: int, data: ProjectMaterialFullEdit):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
-    result = project_service.edit_material(material_id, project_id, data.name, data.quantity, data.notes, data.image_url, data.price)
+    result = project_service.edit_material(
+        material_id, project_id, data.name, data.quantity, data.notes, data.image_url, data.price,
+        data.care_instructions, data.grain_direction, data.pre_wash,
+    )
     if not result:
         raise HTTPException(status_code=404, detail="Material not found")
     return result

@@ -68,7 +68,7 @@ def save_measurements(project_id: int, measurements_json: str) -> None:
 def get_checklist(project_id: int) -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT * FROM checklist_items WHERE project_id = ? ORDER BY created_at",
+            "SELECT * FROM checklist_items WHERE project_id = ? ORDER BY position, created_at",
             (project_id,),
         ).fetchall()
     return [dict(r) for r in rows]
@@ -77,10 +77,20 @@ def get_checklist(project_id: int) -> list[dict]:
 def add_checklist_item(project_id: int, title: str, notes: str) -> dict:
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO checklist_items (project_id, title, notes) VALUES (?, ?, ?)",
-            (project_id, title, notes),
+            """INSERT INTO checklist_items (project_id, title, notes, position)
+               VALUES (?, ?, ?, COALESCE((SELECT MAX(position) FROM checklist_items WHERE project_id = ?), 0) + 1)""",
+            (project_id, title, notes, project_id),
         )
     return {"id": cur.lastrowid, "title": title}
+
+
+def reorder_checklist(project_id: int, ordered_ids: list[int]) -> None:
+    with get_connection() as conn:
+        for pos, item_id in enumerate(ordered_ids, start=1):
+            conn.execute(
+                "UPDATE checklist_items SET position = ? WHERE id = ? AND project_id = ?",
+                (pos, item_id, project_id),
+            )
 
 
 def toggle_checklist_item(item_id: int, project_id: int) -> dict | None:
@@ -196,12 +206,16 @@ def get_materials(project_id: int) -> list[dict]:
 
 
 def add_material(
-    project_id: int, name: str, quantity: str, notes: str, image_url: str | None = None, price: float | None = None
+    project_id: int, name: str, quantity: str, notes: str,
+    image_url: str | None = None, price: float | None = None,
+    care_instructions: str | None = None, grain_direction: str | None = None, pre_wash: int = 0,
 ) -> dict:
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO project_materials (project_id, name, quantity, notes, image_url, price) VALUES (?, ?, ?, ?, ?, ?)",
-            (project_id, name, quantity, notes, image_url, price),
+            """INSERT INTO project_materials
+               (project_id, name, quantity, notes, image_url, price, care_instructions, grain_direction, pre_wash)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (project_id, name, quantity, notes, image_url, price, care_instructions, grain_direction, pre_wash),
         )
     return {"id": cur.lastrowid, "name": name}
 
@@ -235,11 +249,18 @@ def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:
     return dict(row) if row else None
 
 
-def edit_material(material_id: int, project_id: int, name: str, quantity: str, notes: str, image_url: str | None, price: float | None) -> dict | None:
+def edit_material(
+    material_id: int, project_id: int, name: str, quantity: str, notes: str,
+    image_url: str | None, price: float | None,
+    care_instructions: str | None = None, grain_direction: str | None = None, pre_wash: int = 0,
+) -> dict | None:
     with get_connection() as conn:
         conn.execute(
-            "UPDATE project_materials SET name=?, quantity=?, notes=?, image_url=?, price=? WHERE id=? AND project_id=?",
-            (name, quantity, notes, image_url, price, material_id, project_id),
+            """UPDATE project_materials
+               SET name=?, quantity=?, notes=?, image_url=?, price=?,
+                   care_instructions=?, grain_direction=?, pre_wash=?
+               WHERE id=? AND project_id=?""",
+            (name, quantity, notes, image_url, price, care_instructions, grain_direction, pre_wash, material_id, project_id),
         )
         row = conn.execute(
             "SELECT * FROM project_materials WHERE id=? AND project_id=?", (material_id, project_id)

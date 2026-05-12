@@ -28,6 +28,10 @@ class ChecklistItemUpdate(BaseModel):
     image_urls: list[str] = []
 
 
+class ChecklistReorder(BaseModel):
+    ids: list[int]
+
+
 class ProjectPatternSave(BaseModel):
     """Save a pattern (from any scraper) to a project."""
 
@@ -44,6 +48,9 @@ class ProjectMaterialCreate(BaseModel):
     notes: str = Field(default="", max_length=2000)
     image_url: str | None = None
     price: float | None = None
+    care_instructions: str | None = None
+    grain_direction: str | None = None
+    pre_wash: int = 0
 
 
 class ProjectMaterialUpdate(BaseModel):
@@ -58,6 +65,9 @@ class ProjectMaterialFullEdit(BaseModel):
     notes: str = Field(default="", max_length=2000)
     image_url: str | None = None
     price: float | None = None
+    care_instructions: str | None = None
+    grain_direction: str | None = None
+    pre_wash: int = 0
 
 
 class MeasurementsUpdate(BaseModel):
@@ -142,6 +152,7 @@ class ChecklistItem(BaseModel):
     notes: str
     checked: int  # 0 or 1
     image_urls: list[str] = []
+    position: int = 0
     created_at: str
 
 
@@ -165,6 +176,9 @@ class ProjectMaterial(BaseModel):
     purchased: int  # 0 or 1
     price: float | None = None
     image_url: str | None = None
+    care_instructions: str | None = None
+    grain_direction: str | None = None
+    pre_wash: int = 0
     created_at: str
 
 

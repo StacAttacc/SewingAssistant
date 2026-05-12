@@ -153,9 +153,13 @@ def get_materials(project_id: int) -> list[dict]:
 
 
 def add_material(
-    project_id: int, name: str, quantity: str, notes: str, image_url: str | None = None, price: float | None = None
+    project_id: int, name: str, quantity: str, notes: str,
+    image_url: str | None = None, price: float | None = None,
+    care_instructions: str | None = None, grain_direction: str | None = None, pre_wash: int = 0,
 ) -> dict:
-    return project_repository.add_material(project_id, name, quantity, notes, image_url, price)
+    return project_repository.add_material(
+        project_id, name, quantity, notes, image_url, price, care_instructions, grain_direction, pre_wash
+    )
 
 
 def update_material(material_id: int, project_id: int, purchased: int, price: float | None, quantity: str | None) -> dict | None:
@@ -166,8 +170,14 @@ def toggle_material_purchased(material_id: int, project_id: int) -> dict | None:
     return project_repository.toggle_material_purchased(material_id, project_id)
 
 
-def edit_material(material_id: int, project_id: int, name: str, quantity: str, notes: str, image_url: str | None, price: float | None) -> dict | None:
-    return project_repository.edit_material(material_id, project_id, name, quantity, notes, image_url, price)
+def edit_material(
+    material_id: int, project_id: int, name: str, quantity: str, notes: str,
+    image_url: str | None, price: float | None,
+    care_instructions: str | None = None, grain_direction: str | None = None, pre_wash: int = 0,
+) -> dict | None:
+    return project_repository.edit_material(
+        material_id, project_id, name, quantity, notes, image_url, price, care_instructions, grain_direction, pre_wash
+    )
 
 
 def delete_material(material_id: int, project_id: int) -> None:

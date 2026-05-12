@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useBreadcrumb } from '../contexts/BreadcrumbContext'
-import { Trash2, Package, Pencil } from 'lucide-react'
+import { Trash2, Package, Pencil, GripVertical } from 'lucide-react'
 import { API } from '../api'
 import { MEASUREMENTS } from '../constants/measurements'
 import ProjectFormModal from '../components/ProjectFormModal'
 import DeleteButton from '../components/DeleteButton'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 function resolveUrl(url) {
   if (!url) return null
@@ -236,6 +239,9 @@ function EditMaterialModal({ material, projectId, onSaved, onClose }) {
   const [quantity, setQuantity] = useState(material.quantity ?? '')
   const [price, setPrice] = useState(material.price != null ? String(material.price) : '')
   const [notes, setNotes] = useState(isScraped ? '' : (material.notes ?? ''))
+  const [careInstructions, setCareInstructions] = useState(material.care_instructions ?? '')
+  const [grainDirection, setGrainDirection] = useState(material.grain_direction ?? '')
+  const [preWash, setPreWash] = useState(material.pre_wash ?? 0)
   const [imagePreview, setImagePreview] = useState(material.image_url ? resolveUrl(material.image_url) : null)
   const [imageFile, setImageFile] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -266,9 +272,14 @@ function EditMaterialModal({ material, projectId, onSaved, onClose }) {
         })
         if (res.ok) image_url = (await res.json()).url
       }
+      const fabricFields = {
+        care_instructions: careInstructions || null,
+        grain_direction: grainDirection || null,
+        pre_wash: preWash,
+      }
       const body = isScraped
-        ? { name: material.name, quantity, notes: material.notes ?? '', image_url: material.image_url ?? null, price: price ? parseFloat(price) : null }
-        : { name, quantity, notes, image_url, price: price ? parseFloat(price) : null }
+        ? { name: material.name, quantity, notes: material.notes ?? '', image_url: material.image_url ?? null, price: price ? parseFloat(price) : null, ...fabricFields }
+        : { name, quantity, notes, image_url, price: price ? parseFloat(price) : null, ...fabricFields }
       const res = await fetch(`${API}/api/projects/${projectId}/materials/${material.id}/edit`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -337,6 +348,41 @@ function EditMaterialModal({ material, projectId, onSaved, onClose }) {
               </div>
             </>
           )}
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Care instructions</span></label>
+            <input
+              type="text"
+              className="input input-bordered input-sm w-full"
+              placeholder="e.g. Machine wash cold, lay flat to dry"
+              value={careInstructions}
+              onChange={e => setCareInstructions(e.target.value)}
+            />
+          </div>
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Grain direction</span></label>
+            <select
+              className="select select-bordered select-sm w-full"
+              value={grainDirection}
+              onChange={e => setGrainDirection(e.target.value)}
+            >
+              <option value="">— not specified —</option>
+              <option value="straight">Straight grain</option>
+              <option value="bias">Bias cut</option>
+              <option value="cross">Cross grain</option>
+            </select>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer py-1">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-sm"
+              checked={!!preWash}
+              onChange={e => setPreWash(e.target.checked ? 1 : 0)}
+            />
+            <span className="label-text">Pre-washed</span>
+          </label>
 
           <div className="flex flex-col gap-2 mt-1">
             <button type="button" className="btn btn-ghost btn-sm w-full" onClick={onClose}>Cancel</button>
@@ -510,7 +556,6 @@ function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
   const url = urlMatch?.[0]
   const isScraped = !!url
   const isPurchased = !!material.purchased
-  const showEdit = !isScraped || isPurchased
 
   async function handleDelete() {
     try {
@@ -548,13 +593,53 @@ function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
       {material.price != null && (
         <span className="text-xs text-base-content/60 shrink-0">${Number(material.price).toFixed(2)}</span>
       )}
-      {showEdit && (
-        <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(material)} title="Edit">
-          <Pencil className="w-4 h-4" />
-        </button>
-      )}
+      <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(material)} title="Edit">
+        <Pencil className="w-4 h-4" />
+      </button>
       <DeleteButton onConfirm={handleDelete} />
     </div>
+  )
+}
+
+function SortableChecklistItem({ item, projectId, onCheckChange, onEdit, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 group px-2 py-1 rounded-lg hover:bg-base-300 transition-colors"
+    >
+      <button
+        type="button"
+        className="btn btn-xs btn-ghost px-0 shrink-0 cursor-grab active:cursor-grabbing touch-none"
+        {...attributes}
+        {...listeners}
+        tabIndex={-1}
+      >
+        <GripVertical className="w-4 h-4 text-base-content/30" />
+      </button>
+      <input
+        type="checkbox"
+        className="checkbox checkbox-sm shrink-0"
+        checked={!!item.checked}
+        onChange={() => onCheckChange(item)}
+      />
+      {item.image_urls?.[0] && (
+        <img src={resolveUrl(item.image_urls[0])} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
+      )}
+      <span className={`flex-1 text-sm min-w-0 truncate ${item.checked ? 'line-through text-base-content/40' : ''}`}>
+        {item.title}
+      </span>
+      <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(item)} title="Edit">
+        <Pencil className="w-4 h-4" />
+      </button>
+      <DeleteButton onConfirm={() => onDelete(item.id)} />
+    </li>
   )
 }
 
@@ -564,6 +649,8 @@ function ChecklistSection({ projectId, initialItems }) {
   const [adding, setAdding] = useState(false)
   const [completingItem, setCompletingItem] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const checkedCount = items.filter(i => !!i.checked).length
 
@@ -592,6 +679,19 @@ function ChecklistSection({ projectId, initialItems }) {
     } catch (err) {
       console.error('Delete failed:', err)
     }
+  }
+
+  function handleDragEnd({ active, over }) {
+    if (!over || active.id === over.id) return
+    const oldIndex = items.findIndex(i => i.id === active.id)
+    const newIndex = items.findIndex(i => i.id === over.id)
+    const reordered = arrayMove(items, oldIndex, newIndex)
+    setItems(reordered)
+    fetch(`${API}/api/projects/${projectId}/checklist/reorder`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: reordered.map(i => i.id) }),
+    }).catch(err => console.error('Reorder failed:', err))
   }
 
   async function handleAdd(e) {
@@ -649,32 +749,22 @@ function ChecklistSection({ projectId, initialItems }) {
         </form>
         <div className="md:flex-1 md:min-h-0 overflow-y-auto">
           {items.length > 0 ? (
-            <ul className="space-y-2">
-              {items.map(item => (
-                <li key={item.id} className="flex items-center gap-2 group px-2 py-1 rounded-lg hover:bg-base-300 transition-colors">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-sm shrink-0"
-                    checked={!!item.checked}
-                    onChange={() => handleCheckChange(item)}
-                  />
-                  {item.image_urls?.[0] && (
-                    <img src={resolveUrl(item.image_urls[0])} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
-                  )}
-                  <span className={`flex-1 text-sm min-w-0 truncate ${item.checked ? 'line-through text-base-content/40' : ''}`}>
-                    {item.title}
-                  </span>
-                  <button
-                    className="btn btn-xs btn-ghost shrink-0"
-                    onClick={() => setEditingItem(item)}
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <DeleteButton onConfirm={() => handleDelete(item.id)} />
-                </li>
-              ))}
-            </ul>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                <ul className="space-y-2">
+                  {items.map(item => (
+                    <SortableChecklistItem
+                      key={item.id}
+                      item={item}
+                      projectId={projectId}
+                      onCheckChange={handleCheckChange}
+                      onEdit={setEditingItem}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           ) : (
             <p className="text-base-content/40 text-sm px-2">No checklist items yet.</p>
           )}
