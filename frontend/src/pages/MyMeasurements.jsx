@@ -73,7 +73,7 @@ export default function MyMeasurements() {
 
       <div className="flex flex-col md:h-full gap-4">
         <div className="flex items-center justify-between shrink-0">
-          <h1 className="text-2xl font-semibold">My Measurements</h1>
+          <h1 className="text-2xl font-semibold">Saved measurements</h1>
           <div className="flex gap-2">
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>← Back</button>
             <button className="btn btn-primary btn-sm" onClick={() => navigate('/measurements/add')}>+ Add</button>
