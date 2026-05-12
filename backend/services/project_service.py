@@ -136,14 +136,15 @@ def save_pattern(
     image_url: str | None,
     price: str | None,
     notes: str | None = None,
+    price_paid: float | None = None,
 ) -> dict:
     return project_repository.save_pattern(
-        project_id, source, title, url, image_url, price, notes
+        project_id, source, title, url, image_url, price, notes, price_paid
     )
 
 
-def update_pattern(pattern_id: int, project_id: int, title: str, notes: str | None) -> dict | None:
-    return project_repository.update_pattern(pattern_id, project_id, title, notes)
+def update_pattern(pattern_id: int, project_id: int, title: str, notes: str | None, price_paid: float | None) -> dict | None:
+    return project_repository.update_pattern(pattern_id, project_id, title, notes, price_paid)
 
 
 def delete_saved_pattern(pattern_id: int, project_id: int) -> None:

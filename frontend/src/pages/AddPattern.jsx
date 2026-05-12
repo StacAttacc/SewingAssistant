@@ -218,6 +218,7 @@ function UploadSection({ projectId, onDone }) {
   const [file, setFile] = useState(null)
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
+  const [pricePaid, setPricePaid] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -231,6 +232,7 @@ function UploadSection({ projectId, onDone }) {
       form.append('file', file)
       form.append('title', title)
       form.append('notes', notes)
+      if (pricePaid) form.append('price_paid', pricePaid)
       const res = await fetch(`${API}/api/projects/${projectId}/patterns/upload`, {
         method: 'POST',
         body: form,
@@ -281,6 +283,13 @@ function UploadSection({ projectId, onDone }) {
             onChange={e => setNotes(e.target.value)}
           />
         </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Price paid</span></label>
+          <label className="input input-bordered w-full flex items-center gap-2">
+            <span className="text-base-content/40 text-sm select-none">$</span>
+            <input type="number" className="grow" placeholder="0.00" value={pricePaid} onChange={e => setPricePaid(e.target.value)} min="0" step="0.01" />
+          </label>
+        </div>
         <button type="submit" className="btn btn-primary" disabled={loading || !file}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Upload & add to project'}
         </button>
@@ -295,6 +304,8 @@ function ManualSection({ onSave, onDone }) {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [price, setPrice] = useState('')
+  const [pricePaid, setPricePaid] = useState('')
+  const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -303,7 +314,7 @@ function ManualSection({ onSave, onDone }) {
     setLoading(true)
     setError(null)
     try {
-      await onSave({ source: 'manual', title, url, image_url: null, price: price || null })
+      await onSave({ source: 'manual', title, url, image_url: null, price: price || null, price_paid: pricePaid ? parseFloat(pricePaid) : null, notes: notes || null })
       onDone()
     } catch (err) {
       setError(err.message)
@@ -347,6 +358,23 @@ function ManualSection({ onSave, onDone }) {
             onChange={e => setPrice(e.target.value)}
           />
         </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Price paid</span></label>
+          <label className="input input-bordered w-full flex items-center gap-2">
+            <span className="text-base-content/40 text-sm select-none">$</span>
+            <input type="number" className="grow" placeholder="0.00" value={pricePaid} onChange={e => setPricePaid(e.target.value)} min="0" step="0.01" />
+          </label>
+        </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Notes</span></label>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            rows={3}
+            placeholder="Size range, modifications, difficulty…"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+          />
+        </div>
         <button type="submit" className="btn btn-primary" disabled={loading || !url.trim()}>
           {loading ? <span className="loading loading-spinner loading-sm" /> : 'Add to project'}
         </button>
@@ -355,62 +383,48 @@ function ManualSection({ onSave, onDone }) {
   )
 }
 
-// --- Generate Section ---
+// --- Generate Section (AI-powered) ---
 
 function GenerateSection({ projectId, onDone }) {
-  const [measurements, setMeasurements] = useState({ waist: '', hips: '', height: '', bust: '' })
-  const [styleParams, setStyleParams] = useState({ length: 60, flare: 0.3, num_panels: 4, waistband_width: 4 })
-  const [saveMeasurements, setSaveMeasurements] = useState(true)
+  const [sets, setSets] = useState([])
+  const [selectedSetId, setSelectedSetId] = useState('')
+  const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [generated, setGenerated] = useState(null) // { pdf_url, panel_svgs, title }
+  const [generated, setGenerated] = useState(null)
 
-  // Pre-load project measurements
   useEffect(() => {
     fetch(`${API}/api/projects/${projectId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data?.measurements) {
-          setMeasurements(prev => ({ ...prev, ...data.measurements }))
-        }
+        if (!data) return
+        const project = (data.measurement_sets ?? []).map(s => ({ ...s, _source: 'project' }))
+        const global = (data.global_measurement_sets ?? []).map(s => ({ ...s, name: `Shared: ${s.name}`, _source: 'global' }))
+        const all = [...project, ...global]
+        setSets(all)
+        if (all.length > 0) setSelectedSetId(String(all[0].id))
       })
   }, [projectId])
 
-  function setM(key, val) { setMeasurements(prev => ({ ...prev, [key]: val })) }
-  function setS(key, val) { setStyleParams(prev => ({ ...prev, [key]: val })) }
-
   async function handleGenerate(e) {
     e.preventDefault()
+    const ms = sets.find(s => s.id === Number(selectedSetId))
+    if (!ms) return
     setLoading(true)
     setError(null)
     setGenerated(null)
     try {
-      if (saveMeasurements) {
-        await fetch(`${API}/api/projects/${projectId}/measurements`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(measurements),
-        })
-      }
-      const res = await fetch(`${API}/api/projects/${projectId}/patterns/generate`, {
+      const res = await fetch(`${API}/api/projects/${projectId}/patterns/generate-ai`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          garment_type: 'skirt',
-          measurements: Object.fromEntries(
-            Object.entries(measurements).filter(([, v]) => v !== '' && v != null).map(([k, v]) => [k, Number(v)])
-          ),
-          style_params: styleParams,
-        }),
+        body: JSON.stringify({ prompt, measurements: ms.measurements }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.detail || `Error ${res.status}`)
       }
       const patterns = await res.json()
-      // The backend returns the saved pattern; build a preview from style params
       setGenerated({
-        patterns,
         title: patterns[0]?.title ?? 'Generated pattern',
         pdf_url: patterns[0]?.url,
       })
@@ -421,91 +435,54 @@ function GenerateSection({ projectId, onDone }) {
     }
   }
 
-  const flareLabel = styleParams.flare === 0 ? 'Straight' : styleParams.flare < 0.4 ? 'Slight' : styleParams.flare < 0.75 ? 'Full' : 'Circle'
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:flex-1 md:min-h-0">
       {/* Left: form */}
       <div className="bg-base-200 rounded-xl p-4 overflow-y-auto">
-        <form onSubmit={handleGenerate} className="space-y-6">
-
-          {/* Measurements */}
+        <form onSubmit={handleGenerate} className="space-y-5">
           <div>
-            <h2 className="text-lg font-medium mb-3">Measurements (cm)</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {[['waist', 'Waist'], ['hips', 'Hips'], ['height', 'Height'], ['bust', 'Bust']].map(([key, label]) => (
-                <div key={key} className="form-control">
-                  <label className="label py-1"><span className="label-text text-xs">{label}</span></label>
-                  <input
-                    type="number" min="1" step="0.5"
-                    className="input input-bordered input-sm"
-                    placeholder="cm"
-                    value={measurements[key]}
-                    onChange={e => setM(key, e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-            <label className="flex items-center gap-2 mt-2 cursor-pointer">
-              <input type="checkbox" className="checkbox checkbox-sm"
-                checked={saveMeasurements} onChange={e => setSaveMeasurements(e.target.checked)} />
-              <span className="text-sm">Save measurements to project</span>
-            </label>
+            <h2 className="text-lg font-medium mb-1">AI Pattern Generator</h2>
+            <p className="text-sm text-base-content/50">Describe a garment and Haiku will draft a printable pattern from your measurements.</p>
           </div>
 
-          <div className="divider my-0" />
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Measurement set <span className="text-error">*</span></span></label>
+            {sets.length === 0 ? (
+              <p className="text-sm text-base-content/50 italic">No measurement sets found. Add one to your project first.</p>
+            ) : (
+              <select
+                className="select select-bordered select-sm w-full"
+                value={selectedSetId}
+                onChange={e => setSelectedSetId(e.target.value)}
+              >
+                {sets.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
 
-          {/* Style params — Skirt */}
-          <div>
-            <h2 className="text-lg font-medium mb-3">Skirt style</h2>
-            <div className="space-y-4">
-
-              <div className="form-control">
-                <label className="label py-1"><span className="label-text text-xs">Length (cm)</span></label>
-                <input type="number" min="20" max="150" step="1"
-                  className="input input-bordered input-sm"
-                  value={styleParams.length}
-                  onChange={e => setS('length', Number(e.target.value))} />
-              </div>
-
-              <div className="form-control">
-                <label className="label py-1">
-                  <span className="label-text text-xs">Flare</span>
-                  <span className="label-text-alt text-xs">{flareLabel} ({styleParams.flare})</span>
-                </label>
-                <input type="range" min="0" max="1" step="0.05"
-                  className="range range-sm"
-                  value={styleParams.flare}
-                  onChange={e => setS('flare', Number(e.target.value))} />
-                <div className="flex justify-between text-xs text-base-content/40 px-1">
-                  <span>Straight</span><span>Circle</span>
-                </div>
-              </div>
-
-              <div className="form-control">
-                <label className="label py-1"><span className="label-text text-xs">Number of panels</span></label>
-                <select className="select select-bordered select-sm"
-                  value={styleParams.num_panels}
-                  onChange={e => setS('num_panels', Number(e.target.value))}>
-                  {[2, 4, 6, 8].map(n => <option key={n} value={n}>{n} panels</option>)}
-                </select>
-              </div>
-
-              <div className="form-control">
-                <label className="label py-1"><span className="label-text text-xs">Waistband width (cm)</span></label>
-                <input type="number" min="1" max="20" step="0.5"
-                  className="input input-bordered input-sm"
-                  value={styleParams.waistband_width}
-                  onChange={e => setS('waistband_width', Number(e.target.value))} />
-              </div>
-
-            </div>
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Garment description <span className="text-error">*</span></span></label>
+            <textarea
+              className="textarea textarea-bordered w-full"
+              rows={4}
+              placeholder="e.g. wide-leg palazzo pants with elastic waist and side seam pockets"
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+            />
           </div>
 
           {error && <div className="alert alert-error text-sm"><span>{error}</span></div>}
 
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? <><span className="loading loading-spinner loading-sm" /> Generating…</> : 'Generate pattern'}
+          <button
+            type="submit"
+            className="btn btn-primary w-full"
+            disabled={loading || !selectedSetId || !prompt.trim()}
+          >
+            {loading
+              ? <><span className="loading loading-spinner loading-sm" /> Generating…</>
+              : 'Generate with AI'}
           </button>
         </form>
       </div>
@@ -513,7 +490,9 @@ function GenerateSection({ projectId, onDone }) {
       {/* Right: preview */}
       <div className="bg-base-200 rounded-xl p-4 flex flex-col gap-3">
         {!generated ? (
-          <p className="text-base-content/40 text-sm m-auto">Fill in the form and click Generate to see your pattern panels here.</p>
+          <p className="text-base-content/40 text-sm m-auto text-center px-4">
+            Select a measurement set, describe your garment, and click Generate.
+          </p>
         ) : (
           <>
             <div className="flex items-center justify-between shrink-0">

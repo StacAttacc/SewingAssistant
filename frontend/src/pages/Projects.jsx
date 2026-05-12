@@ -204,7 +204,12 @@ export default function Projects() {
                 )}
                 <div className="flex items-center justify-between mt-auto pt-2 text-xs text-base-content/50">
                   <div className="flex gap-3">
-                    {p.budget != null && <span>${Number(p.budget).toFixed(2)}</span>}
+                    {(p.total_spent > 0 || p.budget != null) && (
+                      <span>
+                        ${Number(p.total_spent ?? 0).toFixed(2)}
+                        {p.budget != null && ` / $${Number(p.budget).toFixed(2)}`}
+                      </span>
+                    )}
                     {p.created_at && <span>{new Date(p.created_at).toLocaleDateString()}</span>}
                   </div>
                   {(() => {

@@ -6,9 +6,19 @@ from database import get_connection
 
 def get_all_projects() -> list[dict]:
     with get_connection() as conn:
-        rows = conn.execute(
-            "SELECT * FROM projects ORDER BY created_at DESC"
-        ).fetchall()
+        rows = conn.execute("""
+            SELECT p.*,
+                COALESCE((
+                    SELECT SUM(m.price) FROM project_materials m
+                    WHERE m.project_id = p.id AND m.purchased = 1 AND m.price IS NOT NULL
+                ), 0) +
+                COALESCE((
+                    SELECT SUM(sp.price_paid) FROM saved_patterns sp
+                    WHERE sp.project_id = p.id AND sp.price_paid IS NOT NULL
+                ), 0) AS total_spent
+            FROM projects p
+            ORDER BY p.created_at DESC
+        """).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -177,20 +187,21 @@ def save_pattern(
     image_url: str | None,
     price: str | None,
     notes: str | None = None,
+    price_paid: float | None = None,
 ) -> dict:
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO saved_patterns (project_id, source, title, url, image_url, price, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (project_id, source, title, url, image_url, price, notes),
+            "INSERT INTO saved_patterns (project_id, source, title, url, image_url, price, notes, price_paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (project_id, source, title, url, image_url, price, notes, price_paid),
         )
     return {"id": cur.lastrowid, "url": url}
 
 
-def update_pattern(pattern_id: int, project_id: int, title: str, notes: str | None) -> dict | None:
+def update_pattern(pattern_id: int, project_id: int, title: str, notes: str | None, price_paid: float | None) -> dict | None:
     with get_connection() as conn:
         conn.execute(
-            "UPDATE saved_patterns SET title=?, notes=? WHERE id=? AND project_id=?",
-            (title, notes, pattern_id, project_id),
+            "UPDATE saved_patterns SET title=?, notes=?, price_paid=? WHERE id=? AND project_id=?",
+            (title, notes, price_paid, pattern_id, project_id),
         )
         row = conn.execute(
             "SELECT * FROM saved_patterns WHERE id=? AND project_id=?", (pattern_id, project_id)

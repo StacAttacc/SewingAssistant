@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from services import project_service, measurements_service
+from services import project_service, measurements_service, llm_service
 from services import pattern_generator
 from repositories import project_repository
 
@@ -26,6 +26,7 @@ from models.project import (
     ProjectDetail,
     ProjectProgressImage,
     GeneratePatternRequest,
+    AIPatternRequest,
     ProjectMeasurementSetCreate,
     ProjectMeasurementSet,
 )
@@ -127,6 +128,30 @@ def delete_measurement_set(project_id: int, ms_id: int):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     project_service.delete_measurement_set(ms_id, project_id)
+
+
+@router.post("/{project_id}/patterns/generate-ai", response_model=list[ProjectPattern])
+def generate_pattern_ai(project_id: int, req: AIPatternRequest):
+    project = project_service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        spec = llm_service.generate_pattern_spec(req.prompt, req.measurements)
+        result = pattern_generator.generate_from_spec(spec)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    saved = project_service.save_pattern(
+        project_id,
+        source="generated",
+        title=result["title"],
+        url=result["pdf_url"],
+        image_url=None,
+        price=None,
+    )
+    patterns = project_service.get_saved_patterns(project_id)
+    return [p for p in patterns if p["id"] == saved["id"]]
 
 
 @router.post("/{project_id}/patterns/generate", response_model=list[ProjectPattern])
@@ -233,13 +258,13 @@ def get_saved_patterns(project_id: int):
 @router.post("/{project_id}/patterns", response_model=dict)
 def save_pattern(project_id: int, data: ProjectPatternSave):
     return project_service.save_pattern(
-        project_id, data.source, data.title, data.url, data.image_url, data.price, data.notes
+        project_id, data.source, data.title, data.url, data.image_url, data.price, data.notes, data.price_paid
     )
 
 
 @router.patch("/{project_id}/patterns/{pattern_id}", response_model=ProjectPattern)
 def update_pattern(project_id: int, pattern_id: int, data: ProjectPatternUpdate):
-    result = project_service.update_pattern(pattern_id, project_id, data.title, data.notes)
+    result = project_service.update_pattern(pattern_id, project_id, data.title, data.notes, data.price_paid)
     if not result:
         raise HTTPException(status_code=404, detail="Pattern not found")
     return result
@@ -257,6 +282,7 @@ async def upload_pattern(
     file: UploadFile = File(...),
     title: str = Form(""),
     notes: str = Form(""),
+    price_paid: float | None = Form(None),
 ):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
@@ -283,6 +309,7 @@ async def upload_pattern(
         image_url=url if ext in {".jpg", ".jpeg", ".png", ".webp"} else None,
         price=None,
         notes=notes or None,
+        price_paid=price_paid,
     )
 
 

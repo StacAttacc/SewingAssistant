@@ -108,6 +108,11 @@ def init_db():
             conn.execute("ALTER TABLE saved_patterns ADD COLUMN notes TEXT")
         except sqlite3.OperationalError:
             pass
+        # Migrate existing DBs that predate the price_paid column on saved_patterns
+        try:
+            conn.execute("ALTER TABLE saved_patterns ADD COLUMN price_paid REAL")
+        except sqlite3.OperationalError:
+            pass
 
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS project_progress_images (

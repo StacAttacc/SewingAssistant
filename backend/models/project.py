@@ -35,6 +35,7 @@ class ChecklistReorder(BaseModel):
 class ProjectPatternUpdate(BaseModel):
     title: str = Field(default="", max_length=500)
     notes: str | None = None
+    price_paid: float | None = None
 
 
 class ProjectPatternSave(BaseModel):
@@ -45,6 +46,7 @@ class ProjectPatternSave(BaseModel):
     url: str = Field(min_length=1)
     image_url: str | None = None
     price: str | None = None
+    price_paid: float | None = None
     notes: str | None = None
 
 
@@ -135,6 +137,11 @@ class GeneratePatternRequest(BaseModel):
     style_params: SkirtStyleParams = Field(default_factory=SkirtStyleParams)
 
 
+class AIPatternRequest(BaseModel):
+    prompt: str = Field(min_length=3, max_length=500)
+    measurements: dict  # sparse dict of filled measurement values, e.g. {"waist": 70.0, "hips": 96.0}
+
+
 # --- Response models (what the API returns) ---
 
 
@@ -149,6 +156,7 @@ class Project(BaseModel):
     budget: float | None
     status: str = 'to_start'
     created_at: str
+    total_spent: float = 0.0
 
 
 class ChecklistItem(BaseModel):
@@ -170,6 +178,7 @@ class ProjectPattern(BaseModel):
     url: str
     image_url: str | None
     price: str | None
+    price_paid: float | None = None
     notes: str | None = None
     saved_at: str
 
