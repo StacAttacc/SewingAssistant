@@ -53,7 +53,8 @@
 **11 mai 4:00 -> 11 mai 13:00 ~7h**
     Uniformisation de toute l'application. Elle n'était pas consistente part out et il a aussi fallu accommoder les téléphones, vu que je vais l'utiliser dessus.
 
-**11 mai 18:00 -> 12 mai 3:00 ~9h**
+**11 mai 18:00 -> 12 mai 4:00 ~10h**
     Retravaillé le UX et le UI pour prendre les tailles
     Ajouté plus de détails dans les formulaires
     Ajouté de la fonctionalité pour filter les projets et modifier les données déja entrées
+    Retravaillé le générateur de patrons pour intégrer une IA, on garde quand même celui sans IA juste au cas où. Je le l'utiliserais pas pour générer des patrons plys compliqués, mais il marche.
