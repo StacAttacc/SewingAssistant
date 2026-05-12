@@ -135,9 +135,10 @@ def save_pattern(
     url: str,
     image_url: str | None,
     price: str | None,
+    notes: str | None = None,
 ) -> dict:
     return project_repository.save_pattern(
-        project_id, source, title, url, image_url, price
+        project_id, source, title, url, image_url, price, notes
     )
 
 

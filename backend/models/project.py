@@ -40,6 +40,7 @@ class ProjectPatternSave(BaseModel):
     url: str = Field(min_length=1)
     image_url: str | None = None
     price: str | None = None
+    notes: str | None = None
 
 
 class ProjectMaterialCreate(BaseModel):
@@ -164,6 +165,7 @@ class ProjectPattern(BaseModel):
     url: str
     image_url: str | None
     price: str | None
+    notes: str | None = None
     saved_at: str
 
 

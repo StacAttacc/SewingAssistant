@@ -98,6 +98,44 @@ function MeasurementSetModal({ ms, onClose }) {
   )
 }
 
+function ImageViewerModal({ images, startIndex = 0, onClose }) {
+  const [idx, setIdx] = useState(startIndex)
+  const total = images.length
+  function prev(e) { e.stopPropagation(); setIdx(i => (i - 1 + total) % total) }
+  function next(e) { e.stopPropagation(); setIdx(i => (i + 1) % total) }
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      onClick={onClose}
+    >
+      <div className="relative flex items-center justify-center max-w-[90vw] max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <img
+          src={images[idx]}
+          alt=""
+          className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+        />
+        {total > 1 && (
+          <>
+            <button
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full mr-2 btn btn-circle btn-sm btn-ghost text-white"
+              onClick={prev}
+            >‹</button>
+            <button
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full ml-2 btn btn-circle btn-sm btn-ghost text-white"
+              onClick={next}
+            >›</button>
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white/60 text-xs">{idx + 1} / {total}</span>
+          </>
+        )}
+        <button
+          className="absolute -top-2 -right-2 btn btn-circle btn-xs btn-ghost bg-base-100/80 text-base-content"
+          onClick={onClose}
+        >×</button>
+      </div>
+    </div>
+  )
+}
+
 function PatternRow({ pattern, projectId, onDelete }) {
   const isUpload = pattern.source === 'upload' || pattern.source === 'generated'
   const isPDF = pattern.url?.endsWith('.pdf')
@@ -556,6 +594,7 @@ function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
   const url = urlMatch?.[0]
   const isScraped = !!url
   const isPurchased = !!material.purchased
+  const [viewingImage, setViewingImage] = useState(false)
 
   async function handleDelete() {
     try {
@@ -568,6 +607,10 @@ function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
   }
 
   return (
+    <>
+      {viewingImage && material.image_url && (
+        <ImageViewerModal images={[resolveUrl(material.image_url)]} onClose={() => setViewingImage(false)} />
+      )}
     <div className={`flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-base-300 transition-colors ${isPurchased ? 'opacity-60' : ''}`}>
       <input
         type="checkbox"
@@ -575,7 +618,10 @@ function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
         checked={isPurchased}
         onChange={() => onToggle(material, isPurchased ? 0 : 1)}
       />
-      <div className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300">
+      <div
+        className="w-12 h-12 flex-none rounded overflow-hidden bg-base-200 border border-base-300 cursor-pointer"
+        onClick={() => material.image_url && setViewingImage(true)}
+      >
         {material.image_url
           ? <img src={resolveUrl(material.image_url)} alt="" className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center text-base-content/30"><Package className="w-5 h-5" /></div>
@@ -598,48 +644,61 @@ function MaterialRow({ material, projectId, onDelete, onToggle, onEdit }) {
       </button>
       <DeleteButton onConfirm={handleDelete} />
     </div>
+    </>
   )
 }
 
-function SortableChecklistItem({ item, projectId, onCheckChange, onEdit, onDelete }) {
+function SortableChecklistItem({ item, onCheckChange, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
+  const [viewingImages, setViewingImages] = useState(false)
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
+  const resolvedImages = (item.image_urls ?? []).map(resolveUrl)
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center gap-2 group px-2 py-1 rounded-lg hover:bg-base-300 transition-colors"
-    >
-      <button
-        type="button"
-        className="btn btn-xs btn-ghost px-0 shrink-0 cursor-grab active:cursor-grabbing touch-none"
-        {...attributes}
-        {...listeners}
-        tabIndex={-1}
-      >
-        <GripVertical className="w-4 h-4 text-base-content/30" />
-      </button>
-      <input
-        type="checkbox"
-        className="checkbox checkbox-sm shrink-0"
-        checked={!!item.checked}
-        onChange={() => onCheckChange(item)}
-      />
-      {item.image_urls?.[0] && (
-        <img src={resolveUrl(item.image_urls[0])} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
+    <>
+      {viewingImages && resolvedImages.length > 0 && (
+        <ImageViewerModal images={resolvedImages} onClose={() => setViewingImages(false)} />
       )}
-      <span className={`flex-1 text-sm min-w-0 truncate ${item.checked ? 'line-through text-base-content/40' : ''}`}>
-        {item.title}
-      </span>
-      <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(item)} title="Edit">
-        <Pencil className="w-4 h-4" />
-      </button>
-      <DeleteButton onConfirm={() => onDelete(item.id)} />
-    </li>
+      <li
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center gap-2 group px-2 py-1 rounded-lg hover:bg-base-300 transition-colors"
+      >
+        <button
+          type="button"
+          className="btn btn-xs btn-ghost px-0 shrink-0 cursor-grab active:cursor-grabbing touch-none"
+          {...attributes}
+          {...listeners}
+          tabIndex={-1}
+        >
+          <GripVertical className="w-4 h-4 text-base-content/30" />
+        </button>
+        <input
+          type="checkbox"
+          className="checkbox checkbox-sm shrink-0"
+          checked={!!item.checked}
+          onChange={() => onCheckChange(item)}
+        />
+        {resolvedImages[0] && (
+          <img
+            src={resolvedImages[0]}
+            alt=""
+            className="w-8 h-8 rounded object-cover shrink-0 cursor-pointer"
+            onClick={() => setViewingImages(true)}
+          />
+        )}
+        <span className={`flex-1 text-sm min-w-0 truncate ${item.checked ? 'line-through text-base-content/40' : ''}`}>
+          {item.title}
+        </span>
+        <button className="btn btn-xs btn-ghost shrink-0" onClick={() => onEdit(item)} title="Edit">
+          <Pencil className="w-4 h-4" />
+        </button>
+        <DeleteButton onConfirm={() => onDelete(item.id)} />
+      </li>
+    </>
   )
 }
 
@@ -1179,6 +1238,7 @@ export default function ProjectDetail() {
 function ProgressPhotos({ projectId, initialImages }) {
   const [images, setImages] = useState(initialImages)
   const [uploading, setUploading] = useState(false)
+  const [viewingIndex, setViewingIndex] = useState(null)
 
   async function handleFiles(e) {
     const files = Array.from(e.target.files)
@@ -1210,8 +1270,13 @@ function ProgressPhotos({ projectId, initialImages }) {
     setImages(prev => prev.filter(i => i.id !== imageId))
   }
 
+  const resolvedUrls = images.map(img => resolveUrl(img.url))
+
   return (
     <>
+      {viewingIndex !== null && (
+        <ImageViewerModal images={resolvedUrls} startIndex={viewingIndex} onClose={() => setViewingIndex(null)} />
+      )}
       <div className="flex items-center justify-between mb-3 shrink-0">
         <h2 className="text-lg font-medium">Progress photos</h2>
         <label className={`btn btn-primary btn-sm ${uploading ? 'btn-disabled' : ''}`}>
@@ -1223,9 +1288,13 @@ function ProgressPhotos({ projectId, initialImages }) {
         {images.length === 0 && !uploading && (
           <p className="text-base-content/40 text-sm self-center">No progress photos yet.</p>
         )}
-        {images.map(img => (
-          <div key={img.id} className="relative shrink-0 h-full aspect-square rounded-lg overflow-hidden group">
-            <img src={resolveUrl(img.url)} alt="" className="w-full h-full object-cover" />
+        {images.map((img, i) => (
+          <div
+            key={img.id}
+            className="relative shrink-0 h-full aspect-square rounded-lg overflow-hidden group cursor-pointer"
+            onClick={() => setViewingIndex(i)}
+          >
+            <img src={resolvedUrls[i]} alt="" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
             <DeleteButton
               onConfirm={() => handleDelete(img.id)}

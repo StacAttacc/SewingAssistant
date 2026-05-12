@@ -44,7 +44,8 @@ export default function AddPattern() {
       {/* Tabs */}
       <div role="tablist" className="tabs tabs-border shrink-0">
         <button role="tab" className={`tab ${activeTab === 'search' ? 'tab-active' : ''}`} onClick={() => setActiveTab('search')}>Search</button>
-        <button role="tab" className={`tab ${activeTab === 'manual' ? 'tab-active' : ''}`} onClick={() => setActiveTab('manual')}>Manual Upload</button>
+        <button role="tab" className={`tab ${activeTab === 'upload' ? 'tab-active' : ''}`} onClick={() => setActiveTab('upload')}>Upload</button>
+        <button role="tab" className={`tab ${activeTab === 'url' ? 'tab-active' : ''}`} onClick={() => setActiveTab('url')}>URL</button>
         <button role="tab" className={`tab ${activeTab === 'generate' ? 'tab-active' : ''}`} onClick={() => setActiveTab('generate')}>Generate</button>
       </div>
 
@@ -55,10 +56,14 @@ export default function AddPattern() {
         </div>
       )}
 
-      {activeTab === 'manual' && (
-        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto md:flex-1 space-y-10">
+      {activeTab === 'upload' && (
+        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto md:flex-1">
           <UploadSection projectId={id} onDone={() => navigate(`/projects/${id}`)} />
-          <div className="divider" />
+        </div>
+      )}
+
+      {activeTab === 'url' && (
+        <div className="bg-base-200 rounded-xl p-4 overflow-y-auto md:flex-1">
           <ManualSection onSave={savePattern} onDone={() => navigate(`/projects/${id}`)} />
         </div>
       )}
@@ -212,6 +217,7 @@ function ScrapeSection({ projectId, onSave }) {
 function UploadSection({ projectId, onDone }) {
   const [file, setFile] = useState(null)
   const [title, setTitle] = useState('')
+  const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -224,6 +230,7 @@ function UploadSection({ projectId, onDone }) {
       const form = new FormData()
       form.append('file', file)
       form.append('title', title)
+      form.append('notes', notes)
       const res = await fetch(`${API}/api/projects/${projectId}/patterns/upload`, {
         method: 'POST',
         body: form,
@@ -246,7 +253,7 @@ function UploadSection({ projectId, onDone }) {
       {error && <div className="alert alert-error mb-4"><span>{error}</span></div>}
       <form onSubmit={handleUpload} className="flex flex-col gap-4">
         <div className="form-control">
-          <label className="label"><span className="label-text font-medium">File (PDF, JPG, PNG, WebP)</span></label>
+          <label className="label"><span className="label-text font-medium">File (PDF, JPG, PNG, WebP) <span className="text-error">*</span></span></label>
           <input
             type="file"
             accept=".pdf,.jpg,.jpeg,.png,.webp"
@@ -262,6 +269,16 @@ function UploadSection({ projectId, onDone }) {
             placeholder="Leave blank to use filename"
             value={title}
             onChange={e => setTitle(e.target.value)}
+          />
+        </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-medium">Notes</span></label>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            rows={3}
+            placeholder="Size range, modifications, difficulty…"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
           />
         </div>
         <button type="submit" className="btn btn-primary" disabled={loading || !file}>

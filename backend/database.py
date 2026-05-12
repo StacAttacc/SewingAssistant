@@ -103,6 +103,12 @@ def init_db():
             except sqlite3.OperationalError:
                 pass  # column already exists
 
+        # Migrate existing DBs that predate the notes column on saved_patterns
+        try:
+            conn.execute("ALTER TABLE saved_patterns ADD COLUMN notes TEXT")
+        except sqlite3.OperationalError:
+            pass
+
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS project_progress_images (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,

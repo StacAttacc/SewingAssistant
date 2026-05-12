@@ -176,11 +176,12 @@ def save_pattern(
     url: str,
     image_url: str | None,
     price: str | None,
+    notes: str | None = None,
 ) -> dict:
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO saved_patterns (project_id, source, title, url, image_url, price) VALUES (?, ?, ?, ?, ?, ?)",
-            (project_id, source, title, url, image_url, price),
+            "INSERT INTO saved_patterns (project_id, source, title, url, image_url, price, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (project_id, source, title, url, image_url, price, notes),
         )
     return {"id": cur.lastrowid, "url": url}
 

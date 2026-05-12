@@ -232,7 +232,7 @@ def get_saved_patterns(project_id: int):
 @router.post("/{project_id}/patterns", response_model=dict)
 def save_pattern(project_id: int, data: ProjectPatternSave):
     return project_service.save_pattern(
-        project_id, data.source, data.title, data.url, data.image_url, data.price
+        project_id, data.source, data.title, data.url, data.image_url, data.price, data.notes
     )
 
 
@@ -247,6 +247,7 @@ async def upload_pattern(
     project_id: int,
     file: UploadFile = File(...),
     title: str = Form(""),
+    notes: str = Form(""),
 ):
     if not project_service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Project not found")
@@ -272,6 +273,7 @@ async def upload_pattern(
         url=url,
         image_url=url if ext in {".jpg", ".jpeg", ".png", ".webp"} else None,
         price=None,
+        notes=notes or None,
     )
 
 
