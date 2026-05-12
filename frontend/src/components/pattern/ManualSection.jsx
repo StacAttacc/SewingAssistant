@@ -50,13 +50,10 @@ export default function ManualSection({ onSave, onDone }) {
         </div>
         <div className="form-control">
           <label className="label"><span className="label-text font-medium">Price</span></label>
-          <input
-            type="text"
-            className="input input-bordered w-full"
-            placeholder="e.g. $14.99"
-            value={price}
-            onChange={e => setPrice(e.target.value)}
-          />
+          <label className="input input-bordered w-full flex items-center gap-2">
+            <span className="text-base-content/40 text-sm select-none">$</span>
+            <input type="number" className="grow" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)} min="0" step="0.01" />
+          </label>
         </div>
         <div className="form-control">
           <label className="label"><span className="label-text font-medium">Price paid</span></label>

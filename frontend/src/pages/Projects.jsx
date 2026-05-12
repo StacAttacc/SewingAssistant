@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { API } from '../api'
 import ProjectFormModal from '../components/ProjectFormModal'
+import { fmtMoney, fmtDate } from '../components/project/utils'
 
 const STATUS_OPTIONS = [
   { value: 'to_start',    label: 'To Start',    dot: 'bg-base-content/50', badge: 'bg-base-content/50 text-black' },
@@ -206,11 +207,13 @@ export default function Projects() {
                   <div className="flex gap-3">
                     {(p.total_spent > 0 || p.budget != null) && (
                       <span>
-                        ${Number(p.total_spent ?? 0).toFixed(2)}
-                        {p.budget != null && ` / $${Number(p.budget).toFixed(2)}`}
+                        ${fmtMoney(Number(p.total_spent ?? 0))}
+                        {p.budget != null && ` / $${fmtMoney(Number(p.budget))}`}
                       </span>
                     )}
-                    {p.created_at && <span>{new Date(p.created_at).toLocaleDateString()}</span>}
+                    {p.created_at && (
+                      <span title={new Date(p.created_at).toLocaleDateString()}>{fmtDate(p.created_at)}</span>
+                    )}
                   </div>
                   {(() => {
                     const opt = STATUS_OPTIONS.find(o => o.value === (p.status ?? 'to_start')) ?? STATUS_OPTIONS[0]

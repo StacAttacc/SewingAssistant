@@ -13,6 +13,7 @@ import EditMaterialModal from '../components/project/EditMaterialModal'
 import MaterialRow from '../components/project/MaterialRow'
 import ChecklistSection from '../components/project/ChecklistSection'
 import ProgressPhotos from '../components/project/ProgressPhotos'
+import { fmtMoney, fmtDate } from '../components/project/utils'
 
 export default function ProjectDetail() {
   const { id } = useParams()
@@ -263,49 +264,51 @@ export default function ProjectDetail() {
           {project.description && (
             <p className="text-base-content/70">{project.description}</p>
           )}
-          <div className="flex w-full items-center justify-between mt-2 text-sm text-base-content/50">
-            <div className="flex gap-4 w-full items-center justify-between">
-              {(() => {
-                const matSpent = (project.materials ?? [])
-                  .filter(m => m.purchased && m.price != null)
-                  .reduce((sum, m) => sum + m.price, 0)
-                const patSpent = (project.patterns ?? [])
-                  .filter(p => p.price_paid != null)
-                  .reduce((sum, p) => sum + p.price_paid, 0)
-                const totalSpent = matSpent + patSpent
-                if (totalSpent === 0 && project.budget == null) return null
-                return (
-                  <span>
-                    ${totalSpent.toFixed(2)}
-                    {project.budget != null && ` / $${Number(project.budget).toFixed(2)}`}
-                  </span>
-                )
-              })()}
-              {(() => {
-                const current = STATUS_OPTIONS.find(o => o.value === (project.status ?? 'to_start')) ?? STATUS_OPTIONS[0]
-                return (
-                  <div className="dropdown dropdown-end">
-                    <div tabIndex={0} role="button" className={`badge cursor-pointer select-none ${current.cls}`}>
-                      {current.label} ▾
-                    </div>
-                    <ul className="dropdown-content menu bg-base-100 border border-base-300 rounded-box shadow z-10 p-1 w-36 mt-1">
-                      {STATUS_OPTIONS.map(opt => (
-                        <li key={opt.value}>
-                          <button
-                            className={`text-sm ${opt.value === current.value ? 'font-semibold' : ''}`}
-                            onClick={() => handleStatusChange(opt.value)}
-                          >
-                            <span className={`badge badge-xs ${opt.cls}`} />
-                            {opt.label}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 w-full items-center justify-between mt-2 text-sm text-base-content/50">
+            {(() => {
+              const matSpent = (project.materials ?? [])
+                .filter(m => m.purchased && m.price != null)
+                .reduce((sum, m) => sum + m.price, 0)
+              const patSpent = (project.patterns ?? [])
+                .filter(p => p.price_paid != null)
+                .reduce((sum, p) => sum + p.price_paid, 0)
+              const totalSpent = matSpent + patSpent
+              if (totalSpent === 0 && project.budget == null) return null
+              return (
+                <span className="shrink-0">
+                  ${fmtMoney(totalSpent)}
+                  {project.budget != null && ` / $${fmtMoney(Number(project.budget))}`}
+                </span>
+              )
+            })()}
+            {(() => {
+              const current = STATUS_OPTIONS.find(o => o.value === (project.status ?? 'to_start')) ?? STATUS_OPTIONS[0]
+              return (
+                <div className="dropdown dropdown-end shrink-0">
+                  <div tabIndex={0} role="button" className={`badge cursor-pointer select-none ${current.cls}`}>
+                    {current.label} ▾
                   </div>
-                )
-              })()}
-              {project.created_at && <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>}
-            </div>
+                  <ul className="dropdown-content menu bg-base-100 border border-base-300 rounded-box shadow z-10 p-1 w-36 mt-1">
+                    {STATUS_OPTIONS.map(opt => (
+                      <li key={opt.value}>
+                        <button
+                          className={`text-sm ${opt.value === current.value ? 'font-semibold' : ''}`}
+                          onClick={() => handleStatusChange(opt.value)}
+                        >
+                          <span className={`badge badge-xs ${opt.cls}`} />
+                          {opt.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })()}
+            {project.created_at && (
+              <span className="shrink-0" title={new Date(project.created_at).toLocaleDateString()}>
+                {fmtDate(project.created_at)}
+              </span>
+            )}
           </div>
         </div>
 
