@@ -133,7 +133,7 @@ export default function Projects() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      <div className="flex flex-wrap items-center gap-2 mb-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {[['title', 'Title'], ['budget', 'Budget'], ['date', 'Date']].map(([field, label]) => (
           <button
             key={field}
