@@ -102,6 +102,7 @@ function PatternModal({ pattern, projectId, onSaved, onClose }) {
   const [uiMode, setUiMode] = useState('view')
   const [title, setTitle] = useState(pattern.title ?? '')
   const [notes, setNotes] = useState(pattern.notes ?? '')
+  const [pricePaid, setPricePaid] = useState(pattern.price_paid != null ? String(pattern.price_paid) : '')
   const [loading, setLoading] = useState(false)
 
   const isUpload = pattern.source === 'upload' || pattern.source === 'generated'
@@ -115,7 +116,7 @@ function PatternModal({ pattern, projectId, onSaved, onClose }) {
       const res = await fetch(`${API}/api/projects/${projectId}/patterns/${pattern.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim() || pattern.title, notes: notes || null }),
+        body: JSON.stringify({ title: title.trim() || pattern.title, notes: notes || null, price_paid: pricePaid ? parseFloat(pricePaid) : null }),
       })
       if (!res.ok) throw new Error(`Error ${res.status}`)
       onSaved(await res.json())
@@ -160,10 +161,23 @@ function PatternModal({ pattern, projectId, onSaved, onClose }) {
 
           {pattern.price && (
             <div className="form-control">
-              <label className="label py-1"><span className="label-text font-medium">Price</span></label>
+              <label className="label py-1"><span className="label-text font-medium">Listed price</span></label>
               <p className="text-sm px-1">{pattern.price}</p>
             </div>
           )}
+
+          <div className="form-control">
+            <label className="label py-1"><span className="label-text font-medium">Price paid</span></label>
+            {uiMode === 'view'
+              ? <p className="text-sm px-1">{pricePaid ? `$${Number(pricePaid).toFixed(2)}` : <span className="text-base-content/40">—</span>}</p>
+              : (
+                <label className="input input-bordered input-sm w-full flex items-center gap-2">
+                  <span className="text-base-content/40 text-sm select-none">$</span>
+                  <input type="number" className="grow" placeholder="0.00" value={pricePaid} onChange={e => setPricePaid(e.target.value)} min="0" step="0.01" />
+                </label>
+              )
+            }
+          </div>
 
           {pattern.url && (
             <div className="form-control">
@@ -1240,7 +1254,22 @@ export default function ProjectDetail() {
           )}
           <div className="flex w-full items-center justify-between mt-2 text-sm text-base-content/50">
             <div className="flex gap-4 w-full items-center justify-between">
-              {project.budget != null && <span>Budget: ${Number(project.budget).toFixed(2)}</span>}
+              {(() => {
+                const matSpent = (project.materials ?? [])
+                  .filter(m => m.purchased && m.price != null)
+                  .reduce((sum, m) => sum + m.price, 0)
+                const patSpent = (project.patterns ?? [])
+                  .filter(p => p.price_paid != null)
+                  .reduce((sum, p) => sum + p.price_paid, 0)
+                const totalSpent = matSpent + patSpent
+                if (totalSpent === 0 && project.budget == null) return null
+                return (
+                  <span>
+                    ${totalSpent.toFixed(2)}
+                    {project.budget != null && ` / $${Number(project.budget).toFixed(2)}`}
+                  </span>
+                )
+              })()}
               {(() => {
                 const current = STATUS_OPTIONS.find(o => o.value === (project.status ?? 'to_start')) ?? STATUS_OPTIONS[0]
                 return (
@@ -1274,11 +1303,24 @@ export default function ProjectDetail() {
 
           {/* Patterns */}
           <div className="bg-base-200 rounded-xl p-4 flex flex-col md:min-h-0 md:overflow-hidden">
-            <div className="flex items-center justify-between mb-3 shrink-0">
-              <h2 className="text-lg font-medium">Patterns</h2>
+            <div className="flex items-center justify-between mb-1 shrink-0">
+              <div>
+                <h2 className="text-lg font-medium">Patterns</h2>
+                {(() => {
+                  const spent = (project.patterns ?? [])
+                    .filter(p => p.price_paid != null)
+                    .reduce((sum, p) => sum + p.price_paid, 0)
+                  if (spent === 0) return null
+                  return (
+                    <p className="text-xs text-base-content/50 mt-0.5">
+                      Expenses: ${spent.toFixed(2)}
+                    </p>
+                  )
+                })()}
+              </div>
               <Link to={`/projects/${id}/patterns/add`} className="btn btn-primary btn-sm">+ Add</Link>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto mt-2">
               {project.patterns?.length > 0 ? (
                 <div className="space-y-1">
                   {project.patterns.map(p => (
@@ -1303,7 +1345,7 @@ export default function ProjectDetail() {
                   if (spent === 0) return null
                   return (
                     <p className="text-xs text-base-content/50 mt-0.5">
-                      Expenses: ${spent.toFixed(2)}{project.budget != null ? ` / $${Number(project.budget).toFixed(2)}` : ''}
+                      Expenses: ${spent.toFixed(2)}
                     </p>
                   )
                 })()}
